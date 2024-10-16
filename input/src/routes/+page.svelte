@@ -6,6 +6,7 @@
 
 	let messages: any[] = [];
 	let newMessage = '';
+	let autocompleteText = '';
 
 	onMount(() => {
 		// Here you would typically fetch initial messages from a server
@@ -15,14 +16,34 @@
 		];
 	});
 
-	function handleInput() {
-		// You can add real-time features here, like "user is typing" indicators
+	async function handleInput() {
+		if (newMessage.trim()) {
+			try {
+				const response = await fetch('http://localhost:5000/generate', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						seed_text: newMessage,
+						num_words: 1
+					})
+				});
+				const data = await response.json();
+				autocompleteText = data.generated_text.split(' ').pop();
+			} catch (error) {
+				console.error('Error fetching autocomplete:', error);
+			}
+		} else {
+			autocompleteText = '';
+		}
 	}
 
 	function handleSubmit() {
 		if (newMessage.trim()) {
 			messages = [...messages, { id: messages.length + 1, text: newMessage, sender: 'self' }];
 			newMessage = '';
+			autocompleteText = '';
 			// Here you would typically send the message to a server
 		}
 	}
@@ -43,12 +64,19 @@
 					</div>
 				{/each}
 			</div>
-			<Textarea
-				bind:value={newMessage}
-				on:input={handleInput}
-				placeholder="Type your message here..."
-				class="w-full min-h-[50px]"
-			/>
+			<div class="relative">
+				<Textarea
+					bind:value={newMessage}
+					on:input={handleInput}
+					placeholder="Type your message here..."
+					class="w-full min-h-[50px]"
+				/>
+				{#if autocompleteText}
+					<div class="absolute bottom-2 left-2 text-gray-400">
+						{newMessage}{autocompleteText}
+					</div>
+				{/if}
+			</div>
 		</CardContent>
 		<CardFooter class="flex justify-end">
 			<Button on:click={handleSubmit}>Send</Button>
