@@ -1,12 +1,6 @@
 import re
 from collections import Counter
-
-# Preprocessing: Clean and Tokenize Text Data
-def clean_text(text):
-    text = re.sub(r"http\S+", "", text)  # Remove URLs
-    text = re.sub(r"[^a-zA-Z\s]", "", text)  # Remove special characters and numbers
-    text = text.lower().strip()  # Lowercase and strip whitespaces
-    return text
+import pandas as pd
 
 # Tokenize the text
 def tokenize_text(text):
@@ -14,7 +8,36 @@ def tokenize_text(text):
 
 # Build a vocabulary and tokenize the dataset
 def build_vocab(texts):
-    tokenized_texts = [tokenize_text(clean_text(text)) for text in texts]
+    
+    # Create a DataFrame with all texts
+    names = pd.read_csv('/home/m/dev/scaleout/train/names.csv')
+    nameslist = names['name'].str.lower().tolist()
+    df = pd.DataFrame({'text': texts})
+    
+    # Apply regex operations using pandas
+    df['text'] = df['text'].replace({
+        r'https?://\S+': '',  # Remove URLs (including http:// and https://)
+        r'htp\S+': '',  # Remove URLs
+        r'@\w+': '[name]',  # Replace usernames with [name]
+        r'[^a-zA-Z\s]': '',  # Remove special characters and numbers
+        r'[.,!:;]': '',  # Remove punctuation
+        '&quot;': '',  # Remove &quot; from the data
+        r'(.)\1{2,}': r'\1',  # Replace more than 3 consecutive characters with 1
+        r'\bname\b': '[name]'  # Replace standalone "name" with "[name]"
+    }, regex=True)
+    
+    df['text'] = df['text'].str.lower().str.strip()
+    
+    df['words'] = df['text'].str.split()
+    
+    df['filtered_words'] = df['words'].apply(lambda words: ['[name]' if word in nameslist else word for word in words])
+    
+    # Count how many names got replaced
+    names_replaced = df['filtered_words'].apply(lambda words: words.count('[name]')).sum()
+    print(f"Number of names replaced: {names_replaced}")
+    
+    tokenized_texts = df['filtered_words'].tolist()
+    
     all_words = [word for text in tokenized_texts for word in text]
     word_counts = Counter(all_words)
     sorted_words = sorted(word_counts, key=word_counts.get, reverse=True)
