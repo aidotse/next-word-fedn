@@ -9,55 +9,6 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-from sklearn.model_selection import train_test_split
-from collections import Counter
-import numpy as np
-import re
-import os
-import pandas as pd
-
-# Preprocessing: Clean and Tokenize Text Data
-def clean_text(text):
-    text = re.sub(r"http\S+", "", text)  # Remove URLs
-    text = re.sub(r"[^a-zA-Z\s]", "", text)  # Remove special characters and numbers
-    text = text.lower().strip()  # Lowercase and strip whitespaces
-    return text
-
-# Tokenize the text
-def tokenize_text(text):
-    return text.split()
-
-# Build a vocabulary and tokenize the dataset
-def build_vocab(texts):
-    tokenized_texts = [tokenize_text(clean_text(text)) for text in texts]
-    all_words = [word for text in tokenized_texts for word in text]
-    word_counts = Counter(all_words)
-    sorted_words = sorted(word_counts, key=word_counts.get, reverse=True)
-    
-    # Create a mapping from word to index
-    word_to_idx = {word: idx+1 for idx, word in enumerate(sorted_words)}
-    word_to_idx['<PAD>'] = 0  # Padding index
-    word_to_idx['<UNK>'] = len(word_to_idx)  # Unknown word index
-    return word_to_idx, tokenized_texts
-
-# Convert sequences of words to sequences of integers
-def encode_sequences(tokenized_texts, word_to_idx, seq_length=4):
-    sequences = []
-    for tokens in tokenized_texts:
-        if len(tokens) < seq_length:
-            continue
-        for i in range(seq_length, len(tokens)):
-            seq = tokens[i-seq_length:i]  # Input sequence of words
-            target = tokens[i]  # Target word (next word)
-            encoded_seq = [word_to_idx.get(word, word_to_idx['<UNK>']) for word in seq]
-            encoded_target = word_to_idx.get(target, word_to_idx['<UNK>'])
-            sequences.append((encoded_seq, encoded_target))
-    return sequences
-
 # Define device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -71,8 +22,8 @@ def predict_next_word(model, sequence, word_to_idx, idx_to_word):
 
 
 # Load the saved model and vocabulary
-model_load_path = '../train/lstm_onehot/next_word_lstm_model.pth'
-vocab_load_path = '../train/lstm_onehot/vocabulary.json'
+model_load_path = 'train/lstm_onehot/next_word_lstm_model.pth'
+vocab_load_path = 'train/lstm_onehot/vocabulary.json'
 
 # Create custom Dataset
 class TextDataset(Dataset):
