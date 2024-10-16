@@ -19,7 +19,7 @@
 	async function handleInput() {
 		if (newMessage.trim()) {
 			try {
-				const response = await fetch('http://10.132.177.3:5000/generate', {
+				const response = await fetch('http://localhost:5000/generate', {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
