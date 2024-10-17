@@ -18,21 +18,34 @@ def predict_next_word(model, sequence, word_to_idx, idx_to_word):
         predicted_idx = torch.argmax(output, dim=1).item()
     return idx_to_word[predicted_idx]
 
+def load_model(model_type):
+    global loaded_word_to_idx, loaded_model
+    model_load_path = f'train/{model_type}/model.pth'
+    vocab_load_path = f'train/{model_type}/vocabulary.json'
 
-model_load_path = 'train/gru_onehot/model.pth'
-vocab_load_path = 'train/gru_onehot/vocabulary.json'
+    with open(vocab_load_path, 'r') as f:
+        loaded_word_to_idx = json.load(f)
 
-with open(vocab_load_path, 'r') as f:
-    loaded_word_to_idx = json.load(f)
+    loaded_model = torch.load(model_load_path, map_location=device)
+    loaded_model.eval()
 
-embed_size = 128
-hidden_size = 256
-num_layers = 2
+@app.route('/model-type', methods=['POST'])
+def choose_model():
+    model_type = request.json.get('model_type')
+    
+    global loaded_word_to_idx, loaded_model
+    model_load_path = f'train/{model_type}/model.pth'
+    vocab_load_path = f'train/{model_type}/vocabulary.json'
 
-loaded_model = torch.load(model_load_path, map_location=device)
-loaded_model.eval()
+    with open(vocab_load_path, 'r') as f:
+        loaded_word_to_idx = json.load(f)
 
-print("Model and vocabulary loaded successfully.")
+    loaded_model = torch.load(model_load_path, map_location=device)
+    loaded_model.eval()
+    
+    print(f"Model {model_type} loaded successfully")
+    
+    return jsonify({'message': 'Model loaded successfully'})
 
 
 def generate_text(seed_text, num_words=10):
@@ -43,10 +56,6 @@ def generate_text(seed_text, num_words=10):
         words.append(next_word)
     return ' '.join(words)
 
-
-seed_text = "The quick brown"
-generated_text = generate_text(seed_text)
-print(f"Generated text: {generated_text}")
 
 @app.route('/generate', methods=['POST', 'OPTIONS', 'GET'])
 def autocomplete_word():
@@ -65,6 +74,9 @@ def autocomplete_word():
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
     response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
     return response
+
+model_type = 'gru_onehot'
+load_model(model_type)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
