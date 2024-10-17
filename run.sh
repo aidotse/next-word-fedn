@@ -6,4 +6,4 @@ npm run dev &
 
 cd ..
 
-python modelserver.py &
+python3 modelserver.py &
