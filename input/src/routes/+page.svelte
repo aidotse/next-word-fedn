@@ -45,6 +45,14 @@
 	  }
 	}
   
+	function handleKeydown(event: KeyboardEvent) {
+	  if (event.key === 'Tab' && autocompleteText) {
+		event.preventDefault();
+		newMessage += autocompleteText;
+		autocompleteText = '';
+	  }
+	}
+  
 	function handleSubmit() {
 	  if (newMessage.trim()) {
 		messages = [...messages, { id: messages.length + 1, text: newMessage, sender: 'self' }];
@@ -168,6 +176,7 @@
 		  <Textarea
 			bind:value={newMessage}
 			on:input={handleInput}
+			on:keydown={handleKeydown}
 			placeholder="Type your message here..."
 			class="w-full min-h-[100px] p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 		  />
