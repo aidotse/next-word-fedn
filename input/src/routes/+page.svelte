@@ -1,9 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
-	import Button from '$lib/components/ui/button/button.svelte';
-	import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
-  
+	import { Button } from "$lib/components/ui/button";
+	import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
+
+	import { ModeWatcher } from "mode-watcher";
+
+	import Sun from "lucide-svelte/icons/sun";
+	import Moon from "lucide-svelte/icons/moon";
+   
+	import { toggleMode } from "mode-watcher";
+
 	let messages: any[] = [];
 	let newMessage = '';
 	let autocompleteText = '';
@@ -83,73 +90,25 @@
 	}
   </script>
   
-  <style>
-	.sidebar {
-	  width: 250px;
-	  background-color: #f8f9fa;
-	  padding: 20px;
-	  height: 100vh;
-	  position: fixed;
-	  left: 0;
-	  top: 0;
-	  bottom: 0;
-	  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-	  overflow-y: auto;
-	}
-  
-	.content {
-	  margin-left: 270px;
-	  padding: 20px;
-	  max-width: 800px;
-	  margin: 0 auto;
-	}
+  <div class="fixed top-5 right-5 z-50">
+	<Button on:click={toggleMode} variant="outline" size="icon">
+	  <Sun
+		class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
+	  />
+	  <Moon
+		class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
+	  />
+	  <span class="sr-only">Toggle theme</span>
+	</Button>
+  </div>
 
-	.message-container {
-	  max-height: 400px;
-	  overflow-y: auto;
-	  padding: 10px;
-	  border: 1px solid #e0e0e0;
-	  border-radius: 5px;
-	  margin-bottom: 20px;
-	}
-
-	.message {
-	  padding: 10px;
-	  margin-bottom: 10px;
-	  border-radius: 10px;
-	  max-width: 80%;
-	}
-
-	.message.self {
-	  background-color: #e3f2fd;
-	  margin-left: auto;
-	}
-
-	.message.other {
-	  background-color: #f5f5f5;
-	}
-
-	.input-container {
-	  position: relative;
-	  margin-bottom: 20px;
-	}
-
-	.autocomplete {
-	  position: absolute;
-	  bottom: 5px;
-	  left: 10px;
-	  color: #9e9e9e;
-	  pointer-events: none;
-	}
-  </style>
-  
-  <div class="sidebar">
+  <div class="w-64 p-5 h-screen fixed left-0 top-0 bottom-0 shadow-md overflow-y-auto transition-colors duration-300 bg-gray-100 dark:bg-gray-800 text-black dark:text-white">
 	<h2 class="font-bold text-xl mb-6">Select Model</h2>
 	<div class="flex flex-col space-y-3">
 	  {#each models as model}
 		<Button
 		  on:click={() => selectModel(model)}
-		  class={`w-full transition-colors duration-200 ${selectedModel === model ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 hover:bg-gray-300'}`}
+		  class={`w-full transition-colors duration-200 ${selectedModel === model ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600'}`}
 		>
 		  {model}
 		</Button>
@@ -157,22 +116,22 @@
 	</div>
   </div>
   
-  <div class="content">
+  <div class="ml-64 p-5 max-w-3xl mx-auto">
 	<Card class="w-full shadow-lg">
 	  <CardHeader>
 		<CardTitle class="text-2xl font-bold text-center">Autocomplete Chat</CardTitle>
 	  </CardHeader>
 	  <CardContent>
-		<div class="message-container">
+		<div class="max-h-96 overflow-y-auto p-2.5 border border-gray-200 dark:border-gray-700 rounded-lg mb-5">
 		  {#each messages as message (message.id)}
 			<div
-			  class={`message ${message.sender === 'self' ? 'self' : 'other'}`}
+			  class={`p-2.5 mb-2.5 rounded-lg max-w-[80%] ${message.sender === 'self' ? 'bg-blue-100 dark:bg-blue-900 ml-auto' : 'bg-gray-100 dark:bg-gray-700'}`}
 			>
 			  {message.text}
 			</div>
 		  {/each}
 		</div>
-		<div class="input-container">
+		<div class="relative mb-5">
 		  <Textarea
 			bind:value={newMessage}
 			on:input={handleInput}
@@ -181,7 +140,7 @@
 			class="w-full min-h-[100px] p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 		  />
 		  {#if autocompleteText && newMessage.trim()}
-			<div class="autocomplete">
+			<div class="absolute bottom-1 left-2.5 text-gray-500 pointer-events-none">
 			  {newMessage}{autocompleteText}
 			</div>
 		  {/if}
@@ -192,3 +151,6 @@
 	  </CardFooter>
 	</Card>
   </div>
+
+  <ModeWatcher />
+<slot />
