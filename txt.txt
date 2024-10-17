@@ -1,0 +1,28 @@
+# Tokenize the text
+def tokenize_text(text):
+    return text.split()
+nameslist = pd.read_csv('../../data/names.csv')
+nameslist = nameslist['name'].tolist()
+def build_vocab(texts):
+    def clean_text(text):
+        text = text.lower().strip()  # Lowercase and strip whitespaces
+        text = re.sub(r'(.)\1+', r'\1\1', text)  # Keep only 2 consecutive same characters
+        text = re.sub(r'[.,:]', '', text)  # Remove all . , and :
+        text = re.sub(r'https?://\S+', '', text)  # Remove http:// and https:// URLs
+        text = re.sub(r'@\w+', '[name]', text)  # Replace @names with [name]
+        return text
+
+    tokenized_texts = [tokenize_text(clean_text(text)) for text in texts]
+    all_words = [word for text in tokenized_texts for word in text if not any(char.isalnum() == False for char in word)]
+    word_counts = Counter(all_words)
+    sorted_words = sorted(word_counts, key=word_counts.get, reverse=True)
+    
+    # Keep only the 1000 most frequent words
+    top_1000_words = sorted_words[:1000]
+    
+    # Create a mapping from word to index
+    word_to_idx = {word: idx+1 for idx, word in enumerate(top_1000_words)}
+    word_to_idx['<PAD>'] = 0  # Padding index
+    word_to_idx['<UNK>'] = len(word_to_idx)  # Unknown word token
+    word_to_idx['[name]'] = len(word_to_idx)  # Add [name] token
+    return word_to_idx, tokenized_texts
