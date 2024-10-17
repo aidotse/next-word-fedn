@@ -1,16 +1,14 @@
 import torch
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-
-from torch.utils.data import Dataset
-from torch import nn
 import json
+
+from train.models import NextWordLSTM, NextWordGRU
 
 app = Flask(__name__)
 CORS(app)
 
-# Define device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def predict_next_word(model, sequence, word_to_idx, idx_to_word):
     model.eval()
@@ -21,56 +19,22 @@ def predict_next_word(model, sequence, word_to_idx, idx_to_word):
     return idx_to_word[predicted_idx]
 
 
-# Load the saved model and vocabulary
-model_load_path = 'train/lstm_onehot/next_word_lstm_model.pth'
-vocab_load_path = 'train/lstm_onehot/vocabulary.json'
+model_load_path = 'train/gru_onehot/model.pth'
+vocab_load_path = 'train/gru_onehot/vocabulary.json'
 
-# Create custom Dataset
-class TextDataset(Dataset):
-    def __init__(self, sequences):
-        self.sequences = sequences
-    
-    def __len__(self):
-        return len(self.sequences)
-    
-    def __getitem__(self, idx):
-        sequence, target = self.sequences[idx]
-        return torch.tensor(sequence), torch.tensor(target)
-
-# Define LSTM model
-class NextWordLSTM(nn.Module):
-    def __init__(self, vocab_size, embed_size, hidden_size, num_layers):
-        super(NextWordLSTM, self).__init__()
-        self.embedding = nn.Embedding(vocab_size, embed_size)
-        self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, vocab_size)
-    
-    def forward(self, x):
-        x = self.embedding(x)
-        lstm_out, _ = self.lstm(x)
-        lstm_out = lstm_out[:, -1, :]  # Take the output of the last LSTM cell
-        out = self.fc(lstm_out)
-        return out
-
-# Load the vocabulary
 with open(vocab_load_path, 'r') as f:
     loaded_word_to_idx = json.load(f)
 
-# Define model parameters
 embed_size = 128
 hidden_size = 256
 num_layers = 2
 
-# Create a new model instance with the same architecture
-loaded_model = NextWordLSTM(len(loaded_word_to_idx), embed_size, hidden_size, num_layers).to(device)
-
-# Load the saved state dict
-loaded_model.load_state_dict(torch.load(model_load_path, map_location=device))
-loaded_model.eval()  # Set the model to evaluation mode
+loaded_model = torch.load(model_load_path, map_location=device)
+loaded_model.eval()
 
 print("Model and vocabulary loaded successfully.")
 
-# Function to generate text
+
 def generate_text(seed_text, num_words=10):
     words = seed_text.split()
     for _ in range(num_words):
@@ -79,7 +43,7 @@ def generate_text(seed_text, num_words=10):
         words.append(next_word)
     return ' '.join(words)
 
-# Test the loaded model
+
 seed_text = "The quick brown"
 generated_text = generate_text(seed_text)
 print(f"Generated text: {generated_text}")
