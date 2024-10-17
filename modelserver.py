@@ -10,7 +10,7 @@ CORS(app)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def predict_next_word(model, sequence, word_to_idx, idx_to_word):
+def predict_next_word(model, sequence, idx_to_word):
     model.eval()
     sequence = torch.tensor(sequence).unsqueeze(0).to(device)  # Add batch dimension
     with torch.no_grad():
@@ -34,13 +34,11 @@ loaded_model.eval()
 
 print("Model and vocabulary loaded successfully.")
 
-
 def generate_text(seed_text, num_words=10):
     words = seed_text.split()
-    for _ in range(num_words):
-        sequence = [loaded_word_to_idx.get(word, loaded_word_to_idx.get('<UNK>', 0)) for word in words[-3:]]
-        next_word = predict_next_word(loaded_model, sequence, loaded_word_to_idx, {v: k for k, v in loaded_word_to_idx.items()})
-        words.append(next_word)
+    indata = [loaded_word_to_idx.get(word.lower(), loaded_word_to_idx.get('<UNK>', 0)) for word in words]
+    words.append(predict_next_word(loaded_model, indata, {v: k for k, v in loaded_word_to_idx.items()}))
+
     return ' '.join(words)
 
 
@@ -55,7 +53,7 @@ def autocomplete_word():
     else:
         data = request.json
         seed_text = data.get('seed_text', '')
-        num_words = data.get('num_words', 1)
+        num_words = data.get('num_words', 1) # does nothing now
         
         generated_text = generate_text(seed_text, num_words)
         
@@ -67,4 +65,4 @@ def autocomplete_word():
     return response
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000) 
