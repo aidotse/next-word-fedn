@@ -18,8 +18,11 @@
 	  ];
 	});
   
-	async function handleInput() {
-	  if (newMessage.trim()) {
+	async function handleInput(event: Event) {
+	  const inputElement = event.target as HTMLTextAreaElement;
+	  const lastChar = inputElement.value.slice(-1);
+	  
+	  if (lastChar === ' ' && newMessage.trim()) {
 		try {
 		  const response = await fetch('http://localhost:5000/generate', {
 			method: 'POST',
@@ -27,7 +30,7 @@
 			  'Content-Type': 'application/json'
 			},
 			body: JSON.stringify({
-			  seed_text: newMessage,
+			  seed_text: newMessage.trim(),
 			  num_words: 1,
 			  model: selectedModel
 			})
@@ -168,7 +171,7 @@
 			placeholder="Type your message here..."
 			class="w-full min-h-[100px] p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 		  />
-		  {#if autocompleteText}
+		  {#if autocompleteText && newMessage.trim()}
 			<div class="autocomplete">
 			  {newMessage}{autocompleteText}
 			</div>
