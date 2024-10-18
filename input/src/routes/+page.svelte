@@ -137,13 +137,17 @@
 			on:input={handleInput}
 			on:keydown={handleKeydown}
 			placeholder="Type your message here..."
-			class="w-full min-h-[100px] p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+			class="w-full min-h-[50px] p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent relative z-10 bg-transparent font-sans text-base leading-normal resize-y"
 		  />
 		  {#if autocompleteText && newMessage.trim()}
-			<div class="absolute bottom-1 left-2.5 text-gray-500 pointer-events-none">
-			  {newMessage}{autocompleteText}
+			<div class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+			  <div
+				class="w-full min-h-[50px] p-3 text-gray-500 whitespace-pre-wrap break-words absolute top-0 left-0 font-sans text-base leading-normal"
+			  >
+				<span class="invisible">{newMessage}</span><span class="visible">{autocompleteText}</span>
+			  </div>
 			</div>
-		  {/if}
+		  {/if}	
 		</div>
 	  </CardContent>
 	  <CardFooter class="flex justify-end">
