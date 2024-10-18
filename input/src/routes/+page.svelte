@@ -25,11 +25,8 @@
 	  ];
 	});
   
-	async function handleInput(event: Event) {
-	  const inputElement = event.target as HTMLTextAreaElement;
-	  const lastChar = inputElement.value.slice(-1);
-	  
-	  if (lastChar === ' ' && newMessage.trim()) {
+	async function fetchAutocomplete() {
+	  if (newMessage.trim()) {
 		try {
 		  const response = await fetch('http://localhost:5000/generate', {
 			method: 'POST',
@@ -51,12 +48,23 @@
 		autocompleteText = '';
 	  }
 	}
+
+	async function handleInput(event: Event) {
+	  const inputElement = event.target as HTMLTextAreaElement;
+	  const lastChar = inputElement.value.slice(-1);
+	  
+	  if (lastChar === ' ') {
+		await fetchAutocomplete();
+	  } else {
+		autocompleteText = '';
+	  }
+	}
   
-	function handleKeydown(event: KeyboardEvent) {
+	async function handleKeydown(event: KeyboardEvent) {
 	  if (event.key === 'Tab' && autocompleteText) {
 		event.preventDefault();
-		newMessage += autocompleteText;
-		autocompleteText = '';
+		newMessage += autocompleteText+' ';
+		await fetchAutocomplete();
 	  }
 	}
   
