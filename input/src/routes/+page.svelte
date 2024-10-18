@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
 	import { Button } from "$lib/components/ui/button";
 	import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
@@ -17,12 +17,16 @@
 	let selectedModel = 'GRU';
   
 	let models = ['LSTM', 'GRU'];
+	
+	let messageContainer: HTMLElement;
+	let textareaElement: HTMLTextAreaElement;
   
 	onMount(() => {
 	  messages = [
 		{ id: 1, text: 'Hello!', sender: 'other' },
 		{ id: 2, text: 'Hi there!', sender: 'self' }
 	  ];
+	  scrollToBottom();
 	});
   
 	async function fetchAutocomplete() {
@@ -58,6 +62,8 @@
 	  } else {
 		autocompleteText = '';
 	  }
+	  await tick();
+	  scrollTextareaToBottom();
 	}
   
 	async function handleKeydown(event: KeyboardEvent) {
@@ -65,6 +71,11 @@
 		event.preventDefault();
 		newMessage += autocompleteText+' ';
 		await fetchAutocomplete();
+		await tick();
+		scrollTextareaToBottom();
+	  } else if (event.key === 'Enter' && !event.shiftKey) {
+		event.preventDefault();
+		handleSubmit();
 	  }
 	}
   
@@ -73,6 +84,7 @@
 		messages = [...messages, { id: messages.length + 1, text: newMessage, sender: 'self' }];
 		newMessage = '';
 		autocompleteText = '';
+		scrollToBottom();
 	  }
 	}
   
@@ -94,6 +106,20 @@
 		  },
 		  body: JSON.stringify({ model_type: 'gru_onehot' })
 		});
+	  }
+	}
+
+	function scrollToBottom() {
+	  setTimeout(() => {
+		if (messageContainer) {
+		  messageContainer.scrollTop = messageContainer.scrollHeight;
+		}
+	  }, 0);
+	}
+
+	function scrollTextareaToBottom() {
+	  if (textareaElement) {
+		textareaElement.scrollTop = textareaElement.scrollHeight;
 	  }
 	}
   </script>
@@ -130,7 +156,7 @@
 		<CardTitle class="text-2xl font-bold text-center">Autocomplete Chat</CardTitle>
 	  </CardHeader>
 	  <CardContent>
-		<div class="max-h-96 overflow-y-auto p-2.5 border border-gray-200 dark:border-gray-700 rounded-lg mb-5">
+		<div bind:this={messageContainer} class="max-h-96 overflow-y-auto p-2.5 border border-gray-200 dark:border-gray-700 rounded-lg mb-5">
 		  {#each messages as message (message.id)}
 			<div
 			  class={`p-2.5 mb-2.5 rounded-lg max-w-[80%] ${message.sender === 'self' ? 'bg-blue-100 dark:bg-blue-900 ml-auto' : 'bg-gray-100 dark:bg-gray-700'}`}
@@ -140,13 +166,14 @@
 		  {/each}
 		</div>
 		<div class="relative mb-5">
-		  <Textarea
+		  <textarea
+			bind:this={textareaElement}
 			bind:value={newMessage}
 			on:input={handleInput}
 			on:keydown={handleKeydown}
 			placeholder="Type your message here..."
-			class="w-full min-h-[50px] p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent relative z-10 bg-transparent font-sans text-base leading-normal resize-y"
-		  />
+			class="w-full min-h-[50px] p-3 border rounded-lg focus:outline-none focus:ring-0 relative z-10 bg-transparent font-sans text-base leading-normal resize-y"
+		  ></textarea>
 		  {#if autocompleteText && newMessage.trim()}
 			<div class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
 			  <div
