@@ -10,6 +10,50 @@ CORS(app)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+
+# from transformers import AutoModelForCausalLM, AutoTokenizer
+# import torch
+
+# model_name = "Qwen/Qwen2.5-1.5B-Instruct"
+# model = AutoModelForCausalLM.from_pretrained(
+#     model_name,
+#     torch_dtype="auto",
+#     device_map="auto"
+# )
+# tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+# model.eval()
+# torch.set_grad_enabled(False)
+
+
+def generate_ai_response(prompt):
+    return 'Hello there!'
+    # messages = [
+    #     {"role": "system", "content": "You are a friendly and casual chatbot named Rizzlord. Respond in a conversational manner."},
+    #     {"role": "user", "content": prompt}
+    # ]
+    # text = tokenizer.apply_chat_template(
+    #     messages,
+    #     tokenize=False,
+    #     add_generation_prompt=True
+    # )
+    # model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
+
+    # generated_ids = model.generate(
+    #     **model_inputs,
+    #     max_new_tokens=40,
+    #     do_sample=True,
+    #     top_k=25,
+    #     top_p=0.7,
+    #     temperature=0.4
+    # )
+    # generated_ids = [
+    #     output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+    # ]
+
+    # return tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+
+
 def predict_next_word(model, sequence, idx_to_word):
     model.eval()
     sequence = torch.tensor(sequence).unsqueeze(0).to(device)  # Add batch dimension
@@ -65,6 +109,22 @@ def autocomplete_word():
         num_words = data.get('num_words', 1) # does nothing now
         
         generated_text = generate_text(seed_text, num_words)
+        
+        response = jsonify({'generated_text': generated_text})
+    
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    return response
+
+@app.route('/response', methods=['POST', 'OPTIONS', 'GET'])
+def ai_response():
+    if request.method == 'OPTIONS':
+        response = app.make_default_options_response()
+    else:
+        data = request.json
+ 
+        generated_text = generate_ai_response(data.get('prompt'))
         
         response = jsonify({'generated_text': generated_text})
     

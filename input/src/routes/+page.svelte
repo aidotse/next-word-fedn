@@ -16,7 +16,7 @@
 	let autocompleteText = '';
 	let selectedModel = 'GRU';
   
-	let models = ['LSTM', 'GRU'];
+	let models = ['GRU', 'LSTM'];
 	
 	let messageContainer: HTMLElement;
 	let textareaElement: HTMLTextAreaElement;
@@ -24,9 +24,8 @@
 	onMount(() => {
 	  messages = [
 		{ id: 1, text: 'Hello!', sender: 'other' },
-		{ id: 2, text: 'Hi there!', sender: 'self' }
+		// { id: 2, text: 'Hi there!', sender: 'self' }
 	  ];
-	  scrollToBottom();
 	});
   
 	async function fetchAutocomplete() {
@@ -51,6 +50,26 @@
 	  } else {
 		autocompleteText = '';
 	  }
+	}
+
+	async function ai_response(message: string) {
+		try {
+		  const response = await fetch('http://localhost:5000/response', {
+			method: 'POST',
+			headers: {
+			  'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+			  prompt: message.trim(),
+			})
+		  });
+		  const data = await response.json();
+		  let responseText = data.generated_text;
+		  messages = [...messages, { id: messages.length + 1, text: responseText, sender: 'other' }];
+		  scrollToBottom();
+		} catch (error) {
+		  console.error('Error fetching autocomplete:', error);
+		}
 	}
 
 	async function handleInput(event: Event) {
@@ -82,6 +101,7 @@
 	function handleSubmit() {
 	  if (newMessage.trim()) {
 		messages = [...messages, { id: messages.length + 1, text: newMessage, sender: 'self' }];
+		ai_response(newMessage);
 		newMessage = '';
 		autocompleteText = '';
 		scrollToBottom();
@@ -116,7 +136,6 @@
 		}
 	  }, 0);
 	}
-
 	function scrollTextareaToBottom() {
 	  if (textareaElement) {
 		textareaElement.scrollTop = textareaElement.scrollHeight;
