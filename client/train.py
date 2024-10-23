@@ -25,21 +25,47 @@ def clean_text(text):
 def tokenize_text(text):
     return clean_text(text).split()
 
-nameslist = pd.read_csv('../data/names.csv')
+nameslist = pd.read_csv('names.csv')
 nameslist = nameslist['name'].tolist()
+import json
+
+def read_old_model():
+    model = torch.load('model.pth')
+    return model
+
+def read_old_vocab():
+    with open('vocabulary.json', 'r') as f:
+        existing_vocab = json.load(f)
+    return existing_vocab
 
 def build_vocab(texts):
+    existing_vocab = read_old_vocab()
+
     tokenized_texts = [tokenize_text(text) for text in texts]
     all_words = [word for text in tokenized_texts for word in text if word.isalnum()]
     word_counts = Counter(all_words)
-    sorted_words = sorted(word_counts, key=word_counts.get, reverse=True)
     
-    top_words = sorted_words[:1000]
+    # Start with existing vocabulary
+    word_to_idx = existing_vocab.copy()
     
-    word_to_idx = {word: idx+1 for idx, word in enumerate(top_words)}
-    word_to_idx['<PAD>'] = 0
-    word_to_idx['<UNK>'] = len(word_to_idx)
-    word_to_idx['[name]'] = len(word_to_idx)
+    # Add new words that didn't exist before
+    for word in word_counts:
+        if word not in word_to_idx:
+            word_to_idx[word] = len(word_to_idx)
+    
+    # Ensure special tokens are present
+    special_tokens = ['<PAD>', '<UNK>', '[name]']
+    for token in special_tokens:
+        if token not in word_to_idx:
+            word_to_idx[token] = len(word_to_idx)
+
+    print(f"Vocabulary size: {len(word_to_idx)}")
+    print(f"Added {len(word_to_idx) - len(existing_vocab)} new words to the vocabulary")
+    
+    # Save updated vocabulary
+    with open('vocabulary.json', 'w') as f:
+        json.dump(word_to_idx, f)
+
     return word_to_idx, tokenized_texts
 
 def is_illegal_word(word):
@@ -60,20 +86,15 @@ def encode_sequences(tokenized_texts, word_to_idx, seq_length=6):
             sequences.append((encoded_seq, encoded_target))
     return sequences
 
-folder_path = '../data/x'
-csv_files = [f for f in os.listdir(folder_path) if f.endswith('.csv')]
-csv_files = sorted(csv_files)[:3]
+file_path = 'data/history.csv'
+df = pd.read_csv(file_path)
 
-dfs = []
-for file in csv_files:
-    file_path = os.path.join(folder_path, file)
-    df = pd.read_csv(file_path)
-    dfs.append(df)
-
-df = pd.concat(dfs, ignore_index=True)
-
-texts = df['text'].tolist()
-
+texts = []
+for _, row in df.iterrows():
+    prompt = row['prompt']
+    response = row['response']
+    text = prompt
+    texts.append(text)
 print(f"Loaded {len(texts)} text samples from CSV.")
 
 word_to_idx, tokenized_texts = build_vocab(texts)
@@ -93,27 +114,9 @@ class TextDataset(Dataset):
         sequence, target = self.sequences[idx]
         return torch.tensor(sequence), torch.tensor(target)
 
-class NextWordLSTM(nn.Module):
-    def __init__(self, vocab_size, embed_size, hidden_size, num_layers, repetition_penalty=1.0):
-        super(NextWordLSTM, self).__init__()
-        self.embedding = nn.Embedding(vocab_size, embed_size)
-        self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, vocab_size)
-        self.repetition_penalty = repetition_penalty
-    
-    def forward(self, x):
-        x = self.embedding(x)
-        lstm_out, _ = self.lstm(x)
-        lstm_out = lstm_out[:, -1, :]  # Take the output of the last LSTM cell
-        out = self.fc(lstm_out)
-        
-        if self.repetition_penalty != 1.0:
-            for i in range(out.size(0)):
-                for token in x[i]:
-                    out[i, token] /= self.repetition_penalty
-        
-        return out
-
+# Load the old model
+model = read_old_model()
+model = model.to(device)
 
 train_sequences, val_sequences = train_test_split(sequences, test_size=0.2, random_state=42)
 
@@ -188,8 +191,6 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
     model = best_model
     return train_losses, val_losses, val_accuracies
 
-
-model = NextWordLSTM(vocab_size=len(word_to_idx), embed_size=128, hidden_size=256, num_layers=2).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
 
