@@ -133,7 +133,7 @@ def ai_response():
     response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
     return response
 
-model_type = 'gru_onehot'
+model_type = 'GRU'
 load_model(model_type)
 
 if __name__ == '__main__':

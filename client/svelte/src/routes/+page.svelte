@@ -110,23 +110,14 @@
   
 	function selectModel(model: string) {
 	  selectedModel = model;
-	  if (selectedModel === 'LSTM') {
 		fetch('http://localhost:5000/model-type', {
 		  method: 'POST',
 		  headers: {
 			'Content-Type': 'application/json'
 		  },
-		  body: JSON.stringify({ model_type: 'lstm_onehot' })
+		  body: JSON.stringify({ model_type: selectedModel })
 		});
-	  } else if (selectedModel === 'GRU') {
-		fetch('http://localhost:5000/model-type', {
-		  method: 'POST',
-		  headers: {
-			'Content-Type': 'application/json'
-		  },
-		  body: JSON.stringify({ model_type: 'gru_onehot' })
-		});
-	  }
+
 	}
 
 	function scrollToBottom() {
