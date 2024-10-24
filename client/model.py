@@ -5,9 +5,9 @@ import json
 import csv
 import subprocess
 import threading
-from transformers import BertTokenizer
-import torch.nn as nn
 
+import torch.nn as nn
+from transformers import BertTokenizer
 bertTokens = BertTokenizer.from_pretrained('bert-base-uncased').vocab
 bertTokens_with_numbers = {token: index for index, token in enumerate(bertTokens)}
 class NextWordLSTM(nn.Module):
