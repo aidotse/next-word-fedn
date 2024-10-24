@@ -5,9 +5,11 @@ import json
 import csv
 import subprocess
 import threading
-
+from transformers import BertTokenizer
 import torch.nn as nn
 
+bertTokens = BertTokenizer.from_pretrained('bert-base-uncased').vocab
+bertTokens_with_numbers = {token: index for index, token in enumerate(bertTokens)}
 class NextWordLSTM(nn.Module):
     def __init__(self, vocab_size, embed_size, hidden_size, num_layers, repetition_penalty=1.0):
         super(NextWordLSTM, self).__init__()
@@ -66,11 +68,7 @@ def predict_next_word(model, sequence, idx_to_word):
 
 def load_model(model_type):
     global loaded_word_to_idx, loaded_model
-    model_load_path = f'model.pth'
-    vocab_load_path = f'vocabulary.json'
-
-    with open(vocab_load_path, 'r') as f:
-        loaded_word_to_idx = json.load(f)
+    model_load_path = f'bert.pth'
 
     loaded_model = torch.load(model_load_path, map_location=device)
     loaded_model.eval()
@@ -95,8 +93,8 @@ def choose_model():
 
 def generate_text(seed_text, num_words=10):
     words = seed_text.split()
-    indata = [loaded_word_to_idx.get(word.lower(), loaded_word_to_idx.get('<UNK>', 0)) for word in words]
-    words.append(predict_next_word(loaded_model, indata, {v: k for k, v in loaded_word_to_idx.items()}))
+    indata = [bertTokens_with_numbers.get(word.lower(), bertTokens_with_numbers.get('[UNK]', 0)) for word in words]
+    words.append(predict_next_word(loaded_model, indata, {v: k for k, v in bertTokens_with_numbers.items()}))
 
     return ' '.join(words)
 
