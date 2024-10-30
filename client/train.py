@@ -5,6 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
 import os
 import pandas as pd
+from transformers import BertTokenizer
 
 # sys.path.append("..")
 # from functions import build_vocab, encode_sequences
@@ -14,62 +15,76 @@ print(f"Using device: {device}")
 import re
 from collections import Counter
 
-def clean_text(text):
-    text = text.lower().strip()
-    text = re.sub(r'(.)\1+', r'\1\1', text)
-    text = re.sub(r'[.,:]', '', text)
-    text = re.sub(r'https?://\S+', '', text)
-    text = re.sub(r'@\w+', '[name]', text)
-    return text
-
-def tokenize_text(text):
-    return clean_text(text).split()
 
 nameslist = pd.read_csv('names.csv')
 nameslist = nameslist['name'].tolist()
 import json
 
-def read_old_model():
-    model = torch.load('model.pth')
-    return model
 
-def read_old_vocab():
-    with open('vocabulary.json', 'r') as f:
-        existing_vocab = json.load(f)
-    return existing_vocab
+
+class NextWordLSTM(nn.Module):
+    def __init__(self, vocab_size, embed_size, hidden_size, num_layers, repetition_penalty=1.0):
+        super(NextWordLSTM, self).__init__()
+        self.embedding = nn.Embedding(vocab_size, embed_size)
+        self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_size, vocab_size)
+        self.repetition_penalty = repetition_penalty
+    
+    def forward(self, x):
+        x = self.embedding(x)
+        lstm_out, _ = self.lstm(x)
+        lstm_out = lstm_out[:, -1, :]  # Take the output of the last LSTM cell
+        out = self.fc(lstm_out)
+        
+        if self.repetition_penalty != 1.0:
+            for i in range(out.size(0)):
+                for token in x[i]:
+                    out[i, token] /= self.repetition_penalty
+        
+        return out
+    
+def load_model():
+    model_load_path = f'bert.pth'
+
+    loaded_model = torch.load(model_load_path, map_location=device)
+    loaded_model.train()
+    
+    return loaded_model
+
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+
+def clean_text(text):
+    text = text.lower().strip()
+    text = re.sub(r'(.)\1+', r'\1\1', text)
+    text = re.sub(r'[.,:]', '', text)
+    text = re.sub(r'https?://\S+', '', text)
+    text = re.sub(r'@\w+', '[MASK]', text)
+    return text
+
+def tokenize_text(text):
+    return clean_text(text).split()
+
 
 def build_vocab(texts):
-    existing_vocab = read_old_vocab()
-
     tokenized_texts = [tokenize_text(text) for text in texts]
-    all_words = [word for text in tokenized_texts for word in text if word.isalnum()]
-    word_counts = Counter(all_words)
+    all_tokens = [token for text in tokenized_texts for token in text]
+    token_counts = Counter(all_tokens)
+    sorted_tokens = sorted(token_counts, key=token_counts.get, reverse=True)
+   
     
-    # Start with existing vocabulary
-    word_to_idx = existing_vocab.copy()
+    bert_tokens = tokenizer.vocab.keys()
     
-    # Add new words that didn't exist before
-    for word in word_counts:
-        if word not in word_to_idx:
-            word_to_idx[word] = len(word_to_idx)
+    top_tokens_mapped_to_bert = []
+    for token in sorted_tokens:
+        bert_token = tokenizer.tokenize(token)
+        for bert_token in bert_token:
+            top_tokens_mapped_to_bert.append(bert_token)
     
-    # Ensure special tokens are present
-    special_tokens = ['<PAD>', '<UNK>', '[name]']
-    for token in special_tokens:
-        if token not in word_to_idx:
-            word_to_idx[token] = len(word_to_idx)
-
-    print(f"Vocabulary size: {len(word_to_idx)}")
-    print(f"Added {len(word_to_idx) - len(existing_vocab)} new words to the vocabulary")
-    
-    # Save updated vocabulary
-    with open('vocabulary.json', 'w') as f:
-        json.dump(word_to_idx, f)
-
+    top_tokens_mapped_to_bert = list(set(top_tokens_mapped_to_bert))
+    print(len(top_tokens_mapped_to_bert))
+    word_to_idx = {token: tokenizer.vocab[token] for token in bert_tokens}
     return word_to_idx, tokenized_texts
-
-def is_illegal_word(word):
-    return any(char.isalnum() == False for char in word) or word not in word_to_idx
 
 def encode_sequences(tokenized_texts, word_to_idx, seq_length=6):
     sequences = []
@@ -79,10 +94,8 @@ def encode_sequences(tokenized_texts, word_to_idx, seq_length=6):
         for i in range(seq_length, len(tokens)):
             seq = tokens[i-seq_length:i] 
             target = tokens[i]  
-            if any(is_illegal_word(word) for word in seq) or is_illegal_word(target):
-                continue
-            encoded_seq = [word_to_idx.get(word, word_to_idx['<UNK>']) for word in seq]
-            encoded_target = word_to_idx.get(target, word_to_idx['<UNK>'])
+            encoded_seq = [word_to_idx.get(word, word_to_idx['[UNK]']) for word in seq]
+            encoded_target = word_to_idx.get(target, word_to_idx['[UNK]'])
             sequences.append((encoded_seq, encoded_target))
     return sequences
 
@@ -98,6 +111,7 @@ for _, row in df.iterrows():
 print(f"Loaded {len(texts)} text samples from CSV.")
 
 word_to_idx, tokenized_texts = build_vocab(texts)
+print(word_to_idx)
 sequences = encode_sequences(tokenized_texts, word_to_idx, seq_length=4)
 
 print(f"Vocabulary size: {len(word_to_idx)}")
@@ -114,8 +128,7 @@ class TextDataset(Dataset):
         sequence, target = self.sequences[idx]
         return torch.tensor(sequence), torch.tensor(target)
 
-# Load the old model
-model = read_old_model()
+model = load_model()
 model = model.to(device)
 
 train_sequences, val_sequences = train_test_split(sequences, test_size=0.2, random_state=42)
@@ -195,21 +208,12 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
 
 print("Starting training...")
-train_losses, val_losses, val_accuracies = train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs=10)
 
-import json
-
-# Save the vocabulary (word_to_idx dictionary)
-vocab_save_path = 'vocabulary.json'
-with open(vocab_save_path, 'w') as f:
-    json.dump(word_to_idx, f)
-print(f"Vocabulary saved to {vocab_save_path}")
-
-#save model
-model_save_path = 'model_low_vocab.pth'
-torch.save(model, model_save_path)
-print(f"Model saved to {model_save_path}")
 
 
 if __name__ == '__main__':
-    train_model()
+    train_losses, val_losses, val_accuracies = train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs=10)
+
+    model_save_path = 'model_low_vocab.pth'
+    torch.save(model, model_save_path)
+    print(f"Model saved to {model_save_path}")

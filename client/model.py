@@ -78,11 +78,8 @@ def choose_model():
     model_type = request.json.get('model_type')
     
     global loaded_word_to_idx, loaded_model
-    model_load_path = f'train/{model_type}/model.pth'
-    vocab_load_path = f'train/{model_type}/vocabulary.json'
+    model_load_path = f'train/{model_type}/sigma.pth'
 
-    with open(vocab_load_path, 'r') as f:
-        loaded_word_to_idx = json.load(f)
 
     loaded_model = torch.load(model_load_path, map_location=device)
     loaded_model.eval()
