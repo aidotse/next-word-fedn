@@ -1,0 +1,16 @@
+name: mnist-pytorch
+build_dependencies:
+  - pip
+  - setuptools
+  - wheel
+dependencies:
+  - fedn
+  - torchvision
+  - numpy
+  - transformers
+  - pandas
+  - scikit-learn
+  - tqdm
+  - matplotlib
+  - seaborn
+  - nltk
