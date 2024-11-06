@@ -70,13 +70,13 @@ class TextDataset(Dataset):
         sequence, target = self.sequences[idx]
         return torch.tensor(sequence), torch.tensor(target)
 
-def load_data(data_path, is_train=True):
+def load_data(data_path=None, is_train=True):
 
     if data_path is None:
         data_path = os.environ.get("FEDN_DATA_PATH", abs_path + "/data/history.csv")
 
     df = pd.read_csv(data_path)
-    texts = [row['prompt'] for _, row in df.iterrows()]
+    texts = [row['data'] for _, row in df.iterrows()]
     print(f"loaded data from file: {data_path} ")
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     word_to_idx, tokenized_texts = build_vocab(texts, tokenizer)

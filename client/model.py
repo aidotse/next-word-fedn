@@ -67,6 +67,9 @@ def load_model_eval(model_path):
     model = load_parameters(model_path)
     model = model.eval()
     return model
-
+def load_model_inference(model_path):
+    model = load_parameters(model_path)
+    model = model.eval()
+    return model
 if __name__ == "__main__":
     print("file exists")

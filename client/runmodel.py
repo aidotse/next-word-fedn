@@ -5,11 +5,15 @@ import json
 import csv
 import subprocess
 import threading
-
+from fedn import APIClient
 import torch.nn as nn
 from transformers import BertTokenizer
+from model import load_model_inference
 bertTokens = BertTokenizer.from_pretrained('bert-base-uncased').vocab
 bertTokens_with_numbers = {token: index for index, token in enumerate(bertTokens)}
+client = APIClient(host="fedn.scaleoutsystems.com/ai-sweden-young-talent-2024-vua-fedn-reducer", token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzMzNDc5NDEwLCJpYXQiOjE3MzA4ODc0MTAsImp0aSI6IjI0YTVjMzE0NjQ2OTQxZWY4YWJiZjJkMjBjYWViNjYxIiwidXNlcl9pZCI6NjEyLCJjcmVhdG9yIjoibWFra2EiLCJyb2xlIjoiYWRtaW4iLCJwcm9qZWN0X3NsdWciOiJhaS1zd2VkZW4teW91bmctdGFsZW50LTIwMjQtdnVhIn0.EajGSiKsQt9gMEPb9b2vnqa0A9zZlkdtou8tRjCiyjo", secure=True, verify=True)
+
+
 class NextWordLSTM(nn.Module):
     def __init__(self, vocab_size, embed_size, hidden_size, num_layers, repetition_penalty=1.0):
         super(NextWordLSTM, self).__init__()
@@ -57,43 +61,35 @@ app = Flask(__name__)
 CORS(app)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 def predict_next_word(model, sequence, idx_to_word):
     model.eval()
-    sequence = torch.tensor(sequence).unsqueeze(0).to(device)  # Add batch dimension
+    sequence = torch.tensor(sequence).unsqueeze(0).to(device)
     with torch.no_grad():
         output = model(sequence)
-        predicted_idx = torch.argmax(output, dim=1).item()
-    return idx_to_word[predicted_idx]
+        probabilities = torch.nn.functional.softmax(output, dim=1)
+        top_indices = torch.topk(probabilities, k=3, dim=1).indices[0]
+        top_words = [idx_to_word[idx.item()] for idx in top_indices]
+    return top_words[0], top_words
 
-def load_model(model_type):
+def load_model():
     global loaded_word_to_idx, loaded_model
-    model_load_path = f'bert.pth'
+    model_load_path = 'bert.npz'
+    #client.download_model("e0415099-5474-4910-8494-cb5f995eb9e4", path=model_load_path)
+    loaded_model = load_model_inference(model_load_path)
 
-    loaded_model = torch.load(model_load_path, map_location=device)
-    loaded_model.eval()
-
-@app.route('/model-type', methods=['POST'])
-def choose_model():
-    model_type = request.json.get('model_type')
+def update_model():
+    global loaded_model
+    model_load_path = 'bert.npz'
+    client.download_model("e0415099-5474-4910-8494-cb5f995eb9e4", path=model_load_path)
+    loaded_model = load_model_inference(model_load_path)
+    return True
     
-    global loaded_word_to_idx, loaded_model
-    model_load_path = f'train/{model_type}/sigma.pth'
-
-
-    loaded_model = torch.load(model_load_path, map_location=device)
-    loaded_model.eval()
-    
-    print(f"Model {model_type} loaded successfully")
-    
-    return jsonify({'message': 'Model loaded successfully'})
-
 def generate_text(seed_text, num_words=10):
     words = seed_text.split()
     indata = [bertTokens_with_numbers.get(word.lower(), bertTokens_with_numbers.get('[UNK]', 0)) for word in words]
-    words.append(predict_next_word(loaded_model, indata, {v: k for k, v in bertTokens_with_numbers.items()}))
-
-    return ' '.join(words)
+    top_word, top_3 = predict_next_word(loaded_model, indata, {v: k for k, v in bertTokens_with_numbers.items()})
+    words.append(top_word)
+    return ' '.join(words), top_word, top_3
 
 
 @app.route('/generate', methods=['POST', 'OPTIONS', 'GET'])
@@ -105,27 +101,42 @@ def autocomplete_word():
         seed_text = data.get('seed_text', '')
         num_words = data.get('num_words', 1)
         
-        generated_text = generate_text(seed_text, num_words)
+        generated_text, top_word, top_3 = generate_text(seed_text, num_words)
         
         with open('data/history.csv', 'a', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow([seed_text, generated_text[len(seed_text):].strip()])
+            writer.writerow([seed_text])
         
-        response = jsonify({'generated_text': generated_text})
+        response = jsonify({
+            'generated_text': generated_text,
+            'top_3': top_3
+        })
     
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
     response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
     return response
 
-def run_bash_script():
+@app.route('/update-model', methods=['POST'])
+def update_model_endpoint():
+    try:
+        success = update_model()
+        return jsonify({'success': success, 'message': 'Model updated successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+def run_node_script():
     subprocess.run(['node', 'svelte/build/index.js'])
 
-model_type = 'gru_onehot'
-load_model(model_type)
+    
 
 if __name__ == '__main__':
-    bash_thread = threading.Thread(target=run_bash_script)
-    bash_thread.start()
+    
+    load_model()
+    
+    node_thread = threading.Thread(target=run_node_script)
+
+    node_thread.start()
+ 
     
     app.run(debug=True, host='0.0.0.0', port=5000)

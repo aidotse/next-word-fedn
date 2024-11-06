@@ -1,205 +1,172 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
-	import { Button } from "$lib/components/ui/button";
-	import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
+	import { Button } from '$lib/components/ui/button';
+	import {
+		Card,
+		CardContent,
+		CardFooter,
+		CardHeader,
+		CardTitle
+	} from '$lib/components/ui/card/index.js';
 
-	import { ModeWatcher } from "mode-watcher";
+	import { ModeWatcher } from 'mode-watcher';
 
-	import Sun from "lucide-svelte/icons/sun";
-	import Moon from "lucide-svelte/icons/moon";
-   
-	import { toggleMode } from "mode-watcher";
-
-	let messages: any[] = [];
 	let newMessage = '';
 	let autocompleteText = '';
-	let selectedModel = 'GRU';
-  
-	let models = ['GRU', 'LSTM'];
-	
-	let messageContainer: HTMLElement;
+	let topwords: any[] = [];
 	let textareaElement: HTMLTextAreaElement;
-  
-	onMount(() => {
-	  messages = [
-		{ id: 1, text: 'Hello!', sender: 'other' },
-		// { id: 2, text: 'Hi there!', sender: 'self' }
-	  ];
-	});
-  
-	async function fetchAutocomplete() {
-	  if (newMessage.trim()) {
-		try {
-		  const response = await fetch('http://localhost:5000/generate', {
-			method: 'POST',
-			headers: {
-			  'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-			  seed_text: newMessage.trim(),
-			  num_words: 1,
-			  model: selectedModel
-			})
-		  });
-		  const data = await response.json();
-		  autocompleteText = data.generated_text.split(' ').pop();
-		} catch (error) {
-		  console.error('Error fetching autocomplete:', error);
-		}
-	  } else {
-		autocompleteText = '';
-	  }
-	}
+	let displaytext = '';
+	let isUpdating = false;
+	let updateError = '';
 
-	async function ai_response(message: string) {
-		try {
-		  const response = await fetch('http://localhost:5000/response', {
-			method: 'POST',
-			headers: {
-			  'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-			  prompt: message.trim(),
-			})
-		  });
-		  const data = await response.json();
-		  let responseText = data.generated_text;
-		  messages = [...messages, { id: messages.length + 1, text: responseText, sender: 'other' }];
-		  scrollToBottom();
-		} catch (error) {
-		  console.error('Error fetching autocomplete:', error);
+	async function fetchAutocomplete() {
+		if (newMessage.trim()) {
+			try {
+				const response = await fetch('http://localhost:5000/generate', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						seed_text: newMessage.trim(),
+						num_words: 1
+					})
+				});
+				const data = await response.json();
+				autocompleteText = data.generated_text.split(' ').pop();
+				topwords = data.top_3;
+				console.log(topwords);
+			} catch (error) {
+				console.error('Error fetching autocomplete:', error);
+			}
+		} else {
+			autocompleteText = '';
 		}
 	}
 
 	async function handleInput(event: Event) {
-	  const inputElement = event.target as HTMLTextAreaElement;
-	  const lastChar = inputElement.value.slice(-1);
-	  
-	  if (lastChar === ' ') {
-		await fetchAutocomplete();
-	  } else {
-		autocompleteText = '';
-	  }
-	  await tick();
-	  scrollTextareaToBottom();
-	}
-  
-	async function handleKeydown(event: KeyboardEvent) {
-	  if (event.key === 'Tab' && autocompleteText) {
-		event.preventDefault();
-		newMessage += autocompleteText+' ';
-		await fetchAutocomplete();
+		const inputElement = event.target as HTMLTextAreaElement;
+		const lastChar = inputElement.value.slice(-1);
+
+		if (lastChar === ' ') {
+			await fetchAutocomplete();
+		} else {
+			autocompleteText = '';
+		}
 		await tick();
 		scrollTextareaToBottom();
-	  } else if (event.key === 'Enter' && !event.shiftKey) {
-		event.preventDefault();
-		handleSubmit();
-	  }
-	}
-  
-	function handleSubmit() {
-	  if (newMessage.trim()) {
-		messages = [...messages, { id: messages.length + 1, text: newMessage, sender: 'self' }];
-		ai_response(newMessage);
-		newMessage = '';
-		autocompleteText = '';
-		scrollToBottom();
-	  }
-	}
-  
-	function selectModel(model: string) {
-	  selectedModel = model;
-		fetch('http://localhost:5000/model-type', {
-		  method: 'POST',
-		  headers: {
-			'Content-Type': 'application/json'
-		  },
-		  body: JSON.stringify({ model_type: selectedModel })
-		});
-
 	}
 
-	function scrollToBottom() {
-	  setTimeout(() => {
-		if (messageContainer) {
-		  messageContainer.scrollTop = messageContainer.scrollHeight;
+	async function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Tab' && autocompleteText) {
+			event.preventDefault();
+			newMessage += autocompleteText + ' ';
+			await fetchAutocomplete();
+			await tick();
+			scrollTextareaToBottom();
 		}
-	  }, 0);
 	}
+
 	function scrollTextareaToBottom() {
-	  if (textareaElement) {
-		textareaElement.scrollTop = textareaElement.scrollHeight;
-	  }
+		if (textareaElement) {
+			textareaElement.scrollTop = textareaElement.scrollHeight;
+		}
 	}
-  </script>
-  
-  <div class="fixed top-5 right-5 z-50">
-	<Button on:click={toggleMode} variant="outline" size="icon">
-	  <Sun
-		class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
-	  />
-	  <Moon
-		class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
-	  />
-	  <span class="sr-only">Toggle theme</span>
-	</Button>
-  </div>
 
-  <div class="w-64 p-5 h-screen fixed left-0 top-0 bottom-0 shadow-md overflow-y-auto transition-colors duration-300 bg-gray-100 dark:bg-gray-800 text-black dark:text-white">
-	<h2 class="font-bold text-xl mb-6">Select Model</h2>
-	<div class="flex flex-col space-y-3">
-	  {#each models as model}
-		<Button
-		  on:click={() => selectModel(model)}
-		  class={`w-full transition-colors duration-200 ${selectedModel === model ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600'}`}
-		>
-		  {model}
-		</Button>
-	  {/each}
+	async function updatemodel() {
+		isUpdating = true;
+		updateError = '';
+		try {
+			const response = await fetch('http://localhost:5000/update-model', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+			const data = await response.json();
+			if (data.success) {
+				displaytext = data.message;
+			} else {
+				updateError = data.message;
+			}
+		} catch (error) {
+			console.error('Error updating model:', error);
+			updateError = 'Failed to update model. Please try again.';
+		} finally {
+			isUpdating = false;
+			setTimeout(() => {
+				displaytext = '';
+				updateError = '';
+			}, 3000);
+		}
+	}
+</script>
+
+<button
+	class="absolute top-4 left-4 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+	on:click={updatemodel}
+	disabled={isUpdating}
+>
+	{#if isUpdating}
+		<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+	{/if}
+	{isUpdating ? 'Updating...' : 'Update Model'}
+</button>
+
+{#if displaytext}
+	<div
+		class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-100 dark:bg-green-800 px-4 py-2 rounded-lg text-green-700 dark:text-green-200"
+	>
+		{displaytext}
 	</div>
-  </div>
-  
-  <div class="ml-64 p-5 max-w-3xl mx-auto">
-	<Card class="w-full shadow-lg">
-	  <CardHeader>
-		<CardTitle class="text-2xl font-bold text-center">Autocomplete Chat</CardTitle>
-	  </CardHeader>
-	  <CardContent>
-		<div bind:this={messageContainer} class="max-h-96 overflow-y-auto p-2.5 border border-gray-200 dark:border-gray-700 rounded-lg mb-5">
-		  {#each messages as message (message.id)}
-			<div
-			  class={`p-2.5 mb-2.5 rounded-lg max-w-[80%] ${message.sender === 'self' ? 'bg-blue-100 dark:bg-blue-900 ml-auto' : 'bg-gray-100 dark:bg-gray-700'}`}
-			>
-			  {message.text}
-			</div>
-		  {/each}
-		</div>
-		<div class="relative mb-5">
-		  <textarea
-			bind:this={textareaElement}
-			bind:value={newMessage}
-			on:input={handleInput}
-			on:keydown={handleKeydown}
-			placeholder="Type your message here..."
-			class="w-full min-h-[50px] p-3 border rounded-lg focus:outline-none focus:ring-0 relative z-10 bg-transparent font-sans text-base leading-normal resize-y"
-		  ></textarea>
-		  {#if autocompleteText && newMessage.trim()}
-			<div class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-			  <div
-				class="w-full min-h-[50px] p-3 text-gray-500 whitespace-pre-wrap break-words absolute top-0 left-0 font-sans text-base leading-normal"
-			  >
-				<span class="invisible">{newMessage}</span><span class="visible">{autocompleteText}</span>
-			  </div>
-			</div>
-		  {/if}	
-		</div>
-	  </CardContent>
-	  <CardFooter class="flex justify-end">
-		<Button on:click={handleSubmit} class="bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200">Send</Button>
-	  </CardFooter>
-	</Card>
-  </div>
+{/if}
 
-  <ModeWatcher />
+{#if updateError}
+	<div
+		class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-100 dark:bg-red-800 px-4 py-2 rounded-lg text-red-700 dark:text-red-200"
+	>
+		{updateError}
+	</div>
+{/if}
+
+<div class="container relative">
+	<Card class="w-full shadow-lg mt-24">
+		<CardHeader>
+			<CardTitle class="text-2xl font-bold text-center">Text Autocomplete</CardTitle>
+		</CardHeader>
+		<CardContent>
+			<div class="relative">
+				{#if autocompleteText && newMessage.trim()}
+					<div class="absolute bottom-full left-0 mb-2 flex gap-2">
+						{#each topwords as suggestion, index}
+							<button
+								class={`px-3 py-1 rounded-lg text-sm transition-colors ${
+									index === 0
+										? 'bg-blue-700 hover:bg-blue-800 text-white'
+										: 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
+								}`}
+								on:click={() => {
+									newMessage += suggestion;
+									textareaElement.focus();
+								}}
+							>
+								{suggestion}
+							</button>
+						{/each}
+					</div>
+				{/if}
+				<textarea
+					bind:this={textareaElement}
+					bind:value={newMessage}
+					on:input={handleInput}
+					on:keydown={handleKeydown}
+					placeholder="Start typing..."
+					class="w-full min-h-[200px] p-3 border rounded-lg focus:outline-none focus:ring-0 relative z-10 bg-transparent font-sans text-base leading-normal resize-y"
+				></textarea>
+			</div>
+		</CardContent>
+	</Card>
+</div>
+
 <slot />
