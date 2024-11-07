@@ -14,7 +14,7 @@ sys.path.append(os.path.abspath(dir_path))
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 
-def train(in_model_path, out_model_path, data_path=None, batch_size=1, epochs=5, lr=0.002):
+def train(in_model_path, out_model_path, data_path=None, batch_size=4, epochs=2, lr=0.002):
     x_train, y_train = load_data(data_path)
     
     model = load_model_train(in_model_path)
@@ -27,6 +27,7 @@ def train(in_model_path, out_model_path, data_path=None, batch_size=1, epochs=5,
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
 
     n_batches = max(1, int(math.ceil(len(x_train) / batch_size)))
+    min_loss_threshold = 0.01
 
     for e in range(epochs):
         total_loss = 0
@@ -45,9 +46,23 @@ def train(in_model_path, out_model_path, data_path=None, batch_size=1, epochs=5,
 
             if b % 100 == 0:
                 print(f"Epoch {e}/{epochs-1} | Batch: {b}/{n_batches-1} | Loss: {loss.item()}")
+                if loss.item() < min_loss_threshold:
+                    print(f"Loss {loss.item()} below threshold {min_loss_threshold}. Stopping early to prevent overfitting.")
+                    metadata = {
+                        "num_examples": len(x_train),
+                        "batch_size": batch_size,
+                        "epochs": e + (b/n_batches),
+                        "lr": lr
+                    }
+                    save_metadata(metadata, out_model_path)
+                    save_model(model, out_model_path)
+                    return
 
         avg_loss = total_loss / n_batches
         print(f"Epoch {e}/{epochs-1} completed | Average Loss: {avg_loss:.4f}")
+        if avg_loss < min_loss_threshold:
+            print(f"Average loss {avg_loss:.4f} below threshold {min_loss_threshold}. Stopping early to prevent overfitting.")
+            break
 
     metadata = {
         "num_examples": len(x_train),
