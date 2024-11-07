@@ -33,17 +33,22 @@ def clean_text(text):
     text = re.sub(r'@\w+', '[MASK]', text)
     return text
 
-def tokenize_text(text):
-    return clean_text(text).split()
+def tokenize_text(text, tokenizer):
+    cleaned_text = clean_text(text)
+    tokens = tokenizer.tokenize(cleaned_text)
+    print(f"Original text: {text}")
+    print(f"Cleaned text: {cleaned_text}")
+    print(f"Tokenized text: {tokens}")
+    return tokens
 
 def build_vocab(texts, tokenizer):
-    tokenized_texts = [tokenize_text(text) for text in texts]
+    tokenized_texts = [tokenize_text(text, tokenizer) for text in texts]
     all_tokens = [token for text in tokenized_texts for token in text]
     token_counts = Counter(all_tokens)
     sorted_tokens = sorted(token_counts, key=token_counts.get, reverse=True)
+    print(f"Most common tokens: {sorted_tokens[:10]}")
     
-    bert_tokens = tokenizer.vocab.keys()
-    word_to_idx = {token: tokenizer.vocab[token] for token in bert_tokens}
+    word_to_idx = tokenizer.vocab
     return word_to_idx, tokenized_texts
 
 def encode_sequences(tokenized_texts, word_to_idx, seq_length=6):
@@ -57,6 +62,8 @@ def encode_sequences(tokenized_texts, word_to_idx, seq_length=6):
             encoded_seq = [word_to_idx.get(word, word_to_idx['[UNK]']) for word in seq]
             encoded_target = word_to_idx.get(target, word_to_idx['[UNK]'])
             sequences.append((encoded_seq, encoded_target))
+    print(f"Number of sequences generated: {len(sequences)}")
+    print(f"Sample sequence: {sequences[0]}")
     return sequences
 
 class TextDataset(Dataset):
@@ -78,12 +85,15 @@ def load_data(data_path=None, is_train=True):
     df = pd.read_csv(data_path)
     texts = [row['data'] for _, row in df.iterrows()]
     print(f"loaded data from file: {data_path} ")
+    print(f"Number of texts loaded: {len(texts)}")
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     word_to_idx, tokenized_texts = build_vocab(texts, tokenizer)
     sequences = encode_sequences(tokenized_texts, word_to_idx, seq_length=4)
     
     # Split into train/test
     train_sequences, test_sequences = train_test_split(sequences, test_size=0.2, random_state=42)
+    print(f"Train sequences: {len(train_sequences)}")
+    print(f"Test sequences: {len(test_sequences)}")
     
     if is_train:
         dataset = TextDataset(train_sequences)

@@ -9,8 +9,8 @@ from fedn import APIClient
 import torch.nn as nn
 from transformers import BertTokenizer
 from model import load_model_inference
-bertTokens = BertTokenizer.from_pretrained('bert-base-uncased').vocab
-bertTokens_with_numbers = {token: index for index, token in enumerate(bertTokens)}
+
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 client = APIClient(host="fedn.scaleoutsystems.com/ai-sweden-young-talent-2024-vua-fedn-reducer", token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzMzNDc5NDEwLCJpYXQiOjE3MzA4ODc0MTAsImp0aSI6IjI0YTVjMzE0NjQ2OTQxZWY4YWJiZjJkMjBjYWViNjYxIiwidXNlcl9pZCI6NjEyLCJjcmVhdG9yIjoibWFra2EiLCJyb2xlIjoiYWRtaW4iLCJwcm9qZWN0X3NsdWciOiJhaS1zd2VkZW4teW91bmctdGFsZW50LTIwMjQtdnVhIn0.EajGSiKsQt9gMEPb9b2vnqa0A9zZlkdtou8tRjCiyjo", secure=True, verify=True)
 
 
@@ -73,10 +73,11 @@ def predict_next_word(model, sequence, idx_to_word):
     return top_words[0], top_words, [f"{prob.item():.3f}" for prob in top_probs]
 
 def load_model():
-    global loaded_word_to_idx, loaded_model
+    global loaded_model
     model_load_path = 'bert.npz'
     #client.download_model("e0415099-5474-4910-8494-cb5f995eb9e4", path=model_load_path)
     loaded_model = load_model_inference(model_load_path)
+
 def update_model():
     global loaded_model
     model_load_path = 'bert.npz'
@@ -88,11 +89,21 @@ def update_model():
     return True
     
 def generate_text(seed_text, num_words=10):
-    words = seed_text.split()
-    indata = [bertTokens_with_numbers.get(word.lower(), bertTokens_with_numbers.get('[UNK]', 0)) for word in words]
-    top_word, top_3, prob = predict_next_word(loaded_model, indata, {v: k for k, v in bertTokens_with_numbers.items()})
-    words.append(top_word)
-    return ' '.join(words), top_word, top_3, prob
+    # Tokenize input text properly using BERT tokenizer
+    encoded = tokenizer.encode(seed_text.lower(), add_special_tokens=False)
+    indata = encoded
+    
+    # Get predictions
+    top_word_id, top_3_ids, prob = predict_next_word(loaded_model, indata, tokenizer.ids_to_tokens)
+    
+    # Decode the predicted token and append to original text
+    decoded_word = tokenizer.decode([top_word_id]).strip()
+    result_text = seed_text + " " + decoded_word
+    
+    # Decode top 3 predictions for display
+    top_3_words = [tokenizer.decode([id]).strip() for id in top_3_ids]
+    
+    return result_text, decoded_word, top_3_words, prob
 
 
 @app.route('/generate', methods=['POST', 'OPTIONS', 'GET'])
