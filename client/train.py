@@ -14,7 +14,7 @@ sys.path.append(os.path.abspath(dir_path))
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 
-def train(in_model_path, out_model_path, data_path=None, batch_size=4, epochs=2, lr=0.002):
+def train(in_model_path, out_model_path, data_path=None, batch_size=4, epochs=2, lr=0.01):
     x_train, y_train = load_data(data_path)
     
     model = load_model_train(in_model_path)
@@ -27,7 +27,7 @@ def train(in_model_path, out_model_path, data_path=None, batch_size=4, epochs=2,
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
 
     n_batches = max(1, int(math.ceil(len(x_train) / batch_size)))
-    min_loss_threshold = 0.01
+    min_loss_threshold = 0.0001
 
     for e in range(epochs):
         total_loss = 0

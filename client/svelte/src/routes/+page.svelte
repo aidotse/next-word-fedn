@@ -19,7 +19,7 @@
 	let displaytext = '';
 	let isUpdating = false;
 	let updateError = '';
-
+	let probs: any[] = [];
 	async function fetchAutocomplete() {
 		if (newMessage.trim()) {
 			try {
@@ -36,6 +36,7 @@
 				const data = await response.json();
 				autocompleteText = data.generated_text.split(' ').pop();
 				topwords = data.top_3;
+				probs = data.prob;
 				console.log(topwords);
 			} catch (error) {
 				console.error('Error fetching autocomplete:', error);
@@ -138,24 +139,30 @@
 		<CardContent>
 			<div class="relative">
 				{#if autocompleteText && newMessage.trim()}
-					<div class="absolute bottom-full left-0 mb-2 flex gap-2">
-						{#each topwords as suggestion, index}
-							<button
-								class={`px-3 py-1 rounded-lg text-sm transition-colors ${
-									index === 0
-										? 'bg-blue-700 hover:bg-blue-800 text-white'
-										: 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
-								}`}
-								on:click={() => {
-									newMessage += suggestion;
-									textareaElement.focus();
-								}}
-							>
-								{suggestion}
-							</button>
-						{/each}
+					<div class="absolute bottom-full left-0 mb-2 flex flex-col gap-2">
+						<div class="flex gap-2">
+							{#each topwords as suggestion, index}
+								<div class="flex flex-col items-center">
+									<p class="text-sm text-gray-600 dark:text-gray-400 mb-1">{probs[index]}</p>
+									<button
+										class={`px-3 py-1 rounded-lg text-sm transition-colors ${
+											index === 0
+												? 'bg-blue-700 hover:bg-blue-800 text-white'
+												: 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
+										}`}
+										on:click={() => {
+											newMessage += ` ${suggestion}`;
+											textareaElement.focus();
+										}}
+									>
+										{suggestion}
+									</button>
+								</div>
+							{/each}
+						</div>
 					</div>
 				{/if}
+
 				<textarea
 					bind:this={textareaElement}
 					bind:value={newMessage}
@@ -164,8 +171,8 @@
 					placeholder="Start typing..."
 					class="w-full min-h-[200px] p-3 border rounded-lg focus:outline-none focus:ring-0 relative z-10 bg-transparent font-sans text-base leading-normal resize-y"
 				></textarea>
-			</div>
-		</CardContent>
+			</div></CardContent
+		>
 	</Card>
 </div>
 

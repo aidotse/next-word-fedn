@@ -68,28 +68,31 @@ def predict_next_word(model, sequence, idx_to_word):
         output = model(sequence)
         probabilities = torch.nn.functional.softmax(output, dim=1)
         top_indices = torch.topk(probabilities, k=3, dim=1).indices[0]
+        top_probs = torch.topk(probabilities, k=3, dim=1).values[0]
         top_words = [idx_to_word[idx.item()] for idx in top_indices]
-    return top_words[0], top_words
+    return top_words[0], top_words, [f"{prob.item():.3f}" for prob in top_probs]
 
 def load_model():
     global loaded_word_to_idx, loaded_model
     model_load_path = 'bert.npz'
     #client.download_model("e0415099-5474-4910-8494-cb5f995eb9e4", path=model_load_path)
     loaded_model = load_model_inference(model_load_path)
-
 def update_model():
     global loaded_model
     model_load_path = 'bert.npz'
-    client.download_model("e0415099-5474-4910-8494-cb5f995eb9e4", path=model_load_path)
+    current_models = client.get_models()
+    print(current_models)
+    latest = current_models['result'][0]['model']
+    client.download_model(latest, path=model_load_path)
     loaded_model = load_model_inference(model_load_path)
     return True
     
 def generate_text(seed_text, num_words=10):
     words = seed_text.split()
     indata = [bertTokens_with_numbers.get(word.lower(), bertTokens_with_numbers.get('[UNK]', 0)) for word in words]
-    top_word, top_3 = predict_next_word(loaded_model, indata, {v: k for k, v in bertTokens_with_numbers.items()})
+    top_word, top_3, prob = predict_next_word(loaded_model, indata, {v: k for k, v in bertTokens_with_numbers.items()})
     words.append(top_word)
-    return ' '.join(words), top_word, top_3
+    return ' '.join(words), top_word, top_3, prob
 
 
 @app.route('/generate', methods=['POST', 'OPTIONS', 'GET'])
@@ -101,7 +104,7 @@ def autocomplete_word():
         seed_text = data.get('seed_text', '')
         num_words = data.get('num_words', 1)
         
-        generated_text, top_word, top_3 = generate_text(seed_text, num_words)
+        generated_text, top_word, top_3, prob = generate_text(seed_text, num_words)
         
         with open('data/history.csv', 'a', newline='') as f:
             writer = csv.writer(f)
@@ -109,7 +112,8 @@ def autocomplete_word():
         
         response = jsonify({
             'generated_text': generated_text,
-            'top_3': top_3
+            'top_3': top_3,
+            'prob': prob
         })
     
     response.headers.add('Access-Control-Allow-Origin', '*')
