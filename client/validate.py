@@ -34,7 +34,7 @@ def validate(in_model_path, out_json_path, data_path=None):
 
     texts = []
     for _, row in df.iterrows():
-        prompt = row['prompt']
+        prompt = row['data']
         text = prompt
         texts.append(text)
     print(f"Loaded {len(texts)} text samples from CSV.")
