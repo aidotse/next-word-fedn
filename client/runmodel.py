@@ -89,7 +89,7 @@ def predict_next_word(model, sequence, idx_to_word, word_to_idx, seq_length=6):
 
 def load_model():
     global loaded_model
-    model_load_path = 'bert2.npz'
+    model_load_path = 'bert3.npz'
     #client.download_model("e0415099-5474-4910-8494-cb5f995eb9e4", path=model_load_path)
     loaded_model = load_model_inference(model_load_path)
 

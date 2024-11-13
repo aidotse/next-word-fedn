@@ -29,11 +29,12 @@ def clean_text(text):
         text = str(text)
     text = text.lower().strip()
     text = re.sub(r'(.)\1+', r'\1\1', text)
-    text = re.sub(r'[.,:]', '', text)
     text = re.sub(r'https?://\S+', '', text)
-    text = re.sub(r'@\w+', '[MASK]', text)
+    text = re.sub(r'@\w+', 'name', text)
+    text = re.sub(r'\d+', '', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(r'[^a-zA-Z\s]', '', text)
     return text
-
 def tokenize_text(text, tokenizer):
     cleaned_text = clean_text(text)
     tokens = tokenizer.tokenize(cleaned_text)
