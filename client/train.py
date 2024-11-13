@@ -15,7 +15,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 
 def train(in_model_path, out_model_path, data_path=None, batch_size=4, epochs=2, lr=0.01):
-    x_train, y_train = load_data(data_path)
+    train_loader = load_data(data_path, is_train=True)
     
     model = load_model_train(in_model_path)
     model = model.to(device)
@@ -26,30 +26,32 @@ def train(in_model_path, out_model_path, data_path=None, batch_size=4, epochs=2,
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
 
-    n_batches = max(1, int(math.ceil(len(x_train) / batch_size)))
+    n_batches = len(train_loader)
     min_loss_threshold = 0.0001
 
     for e in range(epochs):
         total_loss = 0
 
-        for b in range(n_batches):
-            batch_x = x_train[b * batch_size : (b + 1) * batch_size].to(device)
-            batch_y = y_train[b * batch_size : (b + 1) * batch_size].to(device)
+        for b, (sequences, lengths, targets) in enumerate(train_loader):
+            sequences = sequences.to(device)
+            lengths = lengths.cpu()  # Lengths need to be on CPU for pack_padded_sequence
+            targets = targets.to(device)
             
             optimizer.zero_grad()
-            outputs = model(batch_x)
-            loss = criterion(outputs, batch_y)
+            outputs = model(sequences, lengths)
+            loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
             
             total_loss += loss.item()
 
             if b % 100 == 0:
-                print(f"Epoch {e}/{epochs-1} | Batch: {b}/{n_batches-1} | Loss: {loss.item()}")
-                if loss.item() < min_loss_threshold:
-                    print(f"Loss {loss.item()} below threshold {min_loss_threshold}. Stopping early to prevent overfitting.")
+                current_loss = total_loss / (b + 1)
+                print(f"Epoch {e}/{epochs-1} | Batch: {b}/{n_batches-1} | Loss: {current_loss:.4f}")
+                if current_loss < min_loss_threshold:
+                    print(f"Loss {current_loss:.4f} below threshold {min_loss_threshold}. Stopping early to prevent overfitting.")
                     metadata = {
-                        "num_examples": len(x_train),
+                        "num_examples": len(train_loader.dataset),
                         "batch_size": batch_size,
                         "epochs": e + (b/n_batches),
                         "lr": lr
@@ -65,7 +67,7 @@ def train(in_model_path, out_model_path, data_path=None, batch_size=4, epochs=2,
             break
 
     metadata = {
-        "num_examples": len(x_train),
+        "num_examples": len(train_loader.dataset),
         "batch_size": batch_size,
         "epochs": epochs,
         "lr": lr
