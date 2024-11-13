@@ -61,9 +61,24 @@ app = Flask(__name__)
 CORS(app)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-def predict_next_word(model, sequence, idx_to_word):
+def predict_next_word(model, sequence, idx_to_word, word_to_idx, seq_length=6):
     model.eval()
-    sequence = torch.tensor(sequence).unsqueeze(0).to(device)
+    
+    padded_sequence = sequence[-seq_length:]
+    print(word_to_idx)
+    padded_sequence += [word_to_idx['[PAD]']] * (seq_length - len(padded_sequence))
+    
+    sequence_tensor = torch.tensor(padded_sequence).unsqueeze(0).to(device)
+    lengths = torch.tensor([min(len(sequence), seq_length)], dtype=torch.int64).cpu()
+    
+    with torch.no_grad():
+        output = model(sequence_tensor, lengths)
+        probabilities = torch.nn.functional.softmax(output, dim=1)
+        predicted_idx = torch.argmax(output, dim=1).item()
+        top_indices = torch.topk(probabilities, k=3, dim=1).indices[0]
+        top_probs = torch.topk(probabilities, k=3, dim=1).values[0]
+        top_words = [idx_to_word[idx.item()] for idx in top_indices]
+    return top_words[0], top_words, [f"{prob.item():.3f}" for prob in top_probs]
     with torch.no_grad():
         output = model(sequence)
         probabilities = torch.nn.functional.softmax(output, dim=1)
@@ -74,7 +89,7 @@ def predict_next_word(model, sequence, idx_to_word):
 
 def load_model():
     global loaded_model
-    model_load_path = 'bert.npz'
+    model_load_path = 'bert2.npz'
     #client.download_model("e0415099-5474-4910-8494-cb5f995eb9e4", path=model_load_path)
     loaded_model = load_model_inference(model_load_path)
 
@@ -89,16 +104,17 @@ def update_model():
     return True
     
 def generate_text(seed_text, num_words=10):
-    # Tokenize input text properly using BERT tokenizer
+
     encoded = tokenizer.encode(seed_text.lower(), add_special_tokens=False)
     indata = encoded
     
-    # Get predictions
-    top_word_id, top_3_ids, prob = predict_next_word(loaded_model, indata, tokenizer.ids_to_tokens)
+
+    idx_to_word = {idx: word for word, idx in tokenizer.vocab.items()}
+
+    top_word_id, top_3_ids, prob = predict_next_word(loaded_model, indata,  idx_to_word, tokenizer.vocab)
     
     result_text = seed_text + " " + top_word_id
 
-    # Decode top 3 predictions for display
    
     
     return result_text, top_word_id, top_3_ids, prob
