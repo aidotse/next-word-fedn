@@ -96,14 +96,12 @@ def generate_text(seed_text, num_words=10):
     # Get predictions
     top_word_id, top_3_ids, prob = predict_next_word(loaded_model, indata, tokenizer.ids_to_tokens)
     
-    # Decode the predicted token and append to original text
-    decoded_word = tokenizer.decode([top_word_id]).strip()
-    result_text = seed_text + " " + decoded_word
-    
+    result_text = seed_text + " " + top_word_id
+
     # Decode top 3 predictions for display
-    top_3_words = [tokenizer.decode([id]).strip() for id in top_3_ids]
+   
     
-    return result_text, decoded_word, top_3_words, prob
+    return result_text, top_word_id, top_3_ids, prob
 
 
 @app.route('/generate', methods=['POST', 'OPTIONS', 'GET'])
