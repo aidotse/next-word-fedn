@@ -1,0 +1,310 @@
+sequence_id,data
+1,"What is Federated Learning?
+
+Federated Learning is a novel approach to address challenges related to data privacy, security, and decentralized data distribution."
+2,"In contrast to traditional machine learning setups where data is collected and stored centrally, Federated Learning allows for collaborative model training while keeping data local with the data owner or device."
+3,"This is particularly advantageous in scenarios where data cannot be easily shared due to privacy regulations, network limitations, or ownership concerns."
+4,"At its core, Federated Learning orchestrates model training across distributed devices or servers, referred to as clients or participants."
+5,"These participants could be diverse endpoints such as mobile devices, IoT gateways, or remote servers."
+6,"Rather than transmitting raw data to a central location, each participant computes gradients locally based on its data."
+7,"These gradients are then communicated to a server, often called the aggregator."
+8,The server aggregates and combines the gradients from multiple participants to update a global model.
+9,This iterative process allows the global model to improve without the need to share the raw data.
+10,"The FEDn framework
+
+The goal with FEDn is to provide a federated learning framework that is secure, scalable and easy-to-use."
+11,"Our ambition is that FEDn supports the full journey from early testing/exploration, through pilot projects, to real-world depoyments and integration."
+12,We believe that that minimal code change should be needed to progress from early proof-of-concepts to production.
+13,"This is reflected in our core design:
+
+    Minimal server-side complexity for the end-user."
+14,Running a proper distributed FL deployment is hard.
+15,"With FEDn Studio we seek to handle all server-side complexity and provide a UI, REST API and a Python interface to help users manage FL experiments and track metrics in real time."
+16,Secure by design.
+17,FL clients do not need to open any ingress ports.
+18,Industry-standard communication protocols (gRPC) and token-based authentication and RBAC (Jason Web Tokens) provides flexible integration in a range of production environments.
+19,ML-framework agnostic.
+20,A black-box client-side architecture lets data scientists interface with their framework of choice.
+21,Cloud native.
+22,"By following cloud native design principles, we ensure a wide range of deployment options including private cloud and on-premise infrastructure."
+23,Scalability and resilience.
+24,Multiple aggregation servers (combiners) can share the workload.
+25,FEDn seamlessly recover from failures in all critical components and manages intermittent client-connections.
+26,Developer and DevOps friendly.
+27,"Extensive event logging and distributed tracing enables developers to monitor the sytem in real-time, simplifying troubleshooting and auditing."
+28,Extensions and integrations are facilitated by a flexible plug-in architecture.
+29,"Features
+
+Federated learning:
+
+    Tiered federated learning architecture enabling massive scalability and resilience."
+30,"Support for any ML framework (examples for PyTorch, Tensforflow/Keras and Scikit-learn)
+
+    Extendable via a plug-in architecture (aggregators, load balancers, object storage backends, databases etc.)
+
+    Built-in federated algorithms (FedAvg, FedAdam, FedYogi, FedAdaGrad, etc.)
+
+    UI, CLI and Python API."
+31,"Implement clients in any language (Python, C++, Kotlin etc.)
+
+    No open ports needed client-side."
+32,"From development to FL in production:
+
+    Secure deployment of server-side / control-plane on Kubernetes."
+33,"UI with dashboards for orchestrating FL experiments and for visualizing results
+
+    Team features - collaborate with other users in shared project workspaces."
+34,"Features for the trusted-third party: Manage access to the FL network, FL clients and training progress."
+35,REST API for handling experiments/jobs.
+36,View and export logging and tracing information.
+37,"Public cloud, dedicated cloud and on-premise deployment options."
+38,"Available client APIs:
+
+    Python client (FEDn C++ client)
+
+    C++ client (FEDn C++ client)
+
+    Android Kotlin client (FEDn Kotlin client)
+
+Support
+
+Community support in available in our Discord server."
+39,"For professionals / Enteprise, we offer Dedicated support."
+40,"What is Federated Learning?
+
+Federated Learning is a novel approach to address challenges related to data privacy, security, and decentralized data distribution."
+41,"In contrast to traditional machine learning setups where data is collected and stored centrally, Federated Learning allows for collaborative model training while keeping data local with the data owner or device."
+42,"This is particularly advantageous in scenarios where data cannot be easily shared due to privacy regulations, network limitations, or ownership concerns."
+43,"At its core, Federated Learning orchestrates model training across distributed devices or servers, referred to as clients or participants."
+44,"These participants could be diverse endpoints such as mobile devices, IoT gateways, or remote servers."
+45,"Rather than transmitting raw data to a central location, each participant computes gradients locally based on its data."
+46,"These gradients are then communicated to a server, often called the aggregator."
+47,The server aggregates and combines the gradients from multiple participants to update a global model.
+48,This iterative process allows the global model to improve without the need to share the raw data.
+49,"The FEDn framework
+
+The goal with FEDn is to provide a federated learning framework that is secure, scalable and easy-to-use."
+50,"Our ambition is that FEDn supports the full journey from early testing/exploration, through pilot projects, to real-world depoyments and integration."
+51,We believe that that minimal code change should be needed to progress from early proof-of-concepts to production.
+52,"This is reflected in our core design:
+
+    Minimal server-side complexity for the end-user."
+53,Running a proper distributed FL deployment is hard.
+54,"With FEDn Studio we seek to handle all server-side complexity and provide a UI, REST API and a Python interface to help users manage FL experiments and track metrics in real time."
+55,Secure by design.
+56,FL clients do not need to open any ingress ports.
+57,Industry-standard communication protocols (gRPC) and token-based authentication and RBAC (Jason Web Tokens) provides flexible integration in a range of production environments.
+58,ML-framework agnostic.
+59,A black-box client-side architecture lets data scientists interface with their framework of choice.
+60,Cloud native.
+61,"By following cloud native design principles, we ensure a wide range of deployment options including private cloud and on-premise infrastructure."
+62,Scalability and resilience.
+63,Multiple aggregation servers (combiners) can share the workload.
+64,FEDn seamlessly recover from failures in all critical components and manages intermittent client-connections.
+65,Developer and DevOps friendly.
+66,"Extensive event logging and distributed tracing enables developers to monitor the sytem in real-time, simplifying troubleshooting and auditing."
+67,Extensions and integrations are facilitated by a flexible plug-in architecture.
+68,"Features
+
+Federated learning:
+
+    Tiered federated learning architecture enabling massive scalability and resilience."
+69,"Support for any ML framework (examples for PyTorch, Tensforflow/Keras and Scikit-learn)
+
+    Extendable via a plug-in architecture (aggregators, load balancers, object storage backends, databases etc.)
+
+    Built-in federated algorithms (FedAvg, FedAdam, FedYogi, FedAdaGrad, etc.)
+
+    UI, CLI and Python API."
+70,"Implement clients in any language (Python, C++, Kotlin etc.)
+
+    No open ports needed client-side."
+71,"From development to FL in production:
+
+    Secure deployment of server-side / control-plane on Kubernetes."
+72,"UI with dashboards for orchestrating FL experiments and for visualizing results
+
+    Team features - collaborate with other users in shared project workspaces."
+73,"Features for the trusted-third party: Manage access to the FL network, FL clients and training progress."
+74,REST API for handling experiments/jobs.
+75,View and export logging and tracing information.
+76,"Public cloud, dedicated cloud and on-premise deployment options."
+77,"Available client APIs:
+
+    Python client (FEDn C++ client)
+
+    C++ client (FEDn C++ client)
+
+    Android Kotlin client (FEDn Kotlin client)
+
+Support
+
+Community support in available in our Discord server."
+78,"For professionals / Enteprise, we offer Dedicated support."
+79,"Getting started with FEDn
+
+Note
+
+This tutorial is a quickstart guide to FEDn based on a pre-made FEDn Project."
+80,It is designed to serve as a starting point for new developers.
+81,"To learn how to develop your own project from scratch, see Develop a FEDn project."
+82,"Prerequisites
+
+    Python >=3.8, <=3.12
+
+    A FEDn Studio account
+
+1."
+83,"Start the server
+
+The first step is to start the server side (aggregator, controller)."
+84,We do this by setting up a new Project in FEDn Studio.
+85,Start by creating an account in Studio: fedn.scaleoutsystems.com/signup.
+86,"Logged into Studio, create a new project by clicking on the “New Project” button in the top right corner of the screen."
+87,You will see a Studio project similar to the image below.
+88,The Studio project provides a secure and managed deployment of all the necessary server side components.
+89,2.
+90,"Prepare the clients and define the global model
+
+Next, we will prepare and package the ML code to be executed by each client and create a first version of the global model (seed model)."
+91,"We will work with one of the pre-defined projects in the FEDn repository, mnist-pytorch."
+92,"First install the FEDn API on your local machine (client):
+
+Using pip
+
+On you local machine/client, install the FEDn package using pip:
+
+pip install fedn
+
+From source
+
+Clone the FEDn repository and install the package:
+
+git clone https://github.com/scaleoutsystems/fedn.git
+cd fedn
+pip install ."
+93,It is recommended to use a virtual environment when installing FEDn.
+94,"Create the compute package and seed model
+
+In order to train a federated model using FEDn, your Studio project needs to be initialized with a compute package and a seed model."
+95,The compute package is a code bundle containing the code used by the client to execute local training and local validation.
+96,The seed model is a first version of the global model.
+97,"For a detailed explaination of the compute package and seed model, see this guide: Develop a FEDn project
+
+To work through this quick start you need a local copy of the mnist-pytorch example project contained in the main FEDn Git repository."
+98,"Clone the repository using the following command, if you didn’t already do it in the previous step:
+
+git clone https://github.com/scaleoutsystems/fedn.git
+
+Navigate to the fedn/examples/mnist-pytorch folder."
+99,The compute package is located in the folder client.
+100,"Create a compute package:
+
+fedn package create --path client
+
+This will create a file called package.tgz in the root of the project."
+101,"Next, create the seed model:
+
+fedn run build --path client
+
+This will create a file called seed.npz in the root of the project."
+102,"Note
+
+This example automatically creates the runtime environment for the compute package using Virtualenv."
+103,"When you first exectue the above commands, FEDn will build a venv, and this takes a bit of time."
+104,"For more information on the various options to manage the environement, see Develop a FEDn project."
+105,Next will now upload these files to your Studio project.
+106,3.
+107,"Initialize the server-side
+
+The next step is to initialize the server side with the client code and the initial global model."
+108,"In the Studio UI,
+
+    Navigate to the project you created in step 1 and click on the “Sessions” tab."
+109,Click on the “New Session” button.
+110,"Under the “Compute package” tab, select a name and upload the generated package file."
+111,"Under the “Seed model” tab, upload the generated seed file:
+
+
+Continue to step 4 before starting the session."
+112,The uploaded package and seed files are saved.
+113,4.
+114,"Start clients
+
+Now we are ready to start FEDn clients on your local machine."
+115,"There are two steps involved:
+
+    Register a new client in your Studio project, issuing an access token."
+116,"Start up a client process on your local host (using the token to connect securely)
+
+Generate an access token for the client (in Studio)
+
+Each local client needs an access token in order to connect securely to the FEDn server."
+117,These tokens are issued from your Studio Project.
+118,Go to the ‘Clients’ tab and click ‘Connect client’.
+119,Download a client configuration file and save it to the root of the examples/mnist-pytorch folder.
+120,Rename the file to ‘client.yaml’.
+121,"Start the client (on your local machine)
+
+The default training and test data for this particular example (mnist-pytorch) is for convenience downloaded and split automatically by the client when it starts up."
+122,The number of splits and which split to use by a client can be controlled via the environment variables FEDN_NUM_DATA_SPLITS and FEDN_DATA_PATH.
+123,"Start a client (using a 10-split and the 1st partition) by running the following commands:
+
+    Unix/MacOS
+    Windows (Powershell)
+
+export FEDN_PACKAGE_EXTRACT_DIR=package
+export FEDN_NUM_DATA_SPLITS=10
+export FEDN_DATA_PATH=./data/clients/1/mnist.pt
+fedn run client -in client.yaml --secure=True --force-ssl
+
+Repeat these two steps (generate an access token and start a local client) for the number of clients you want to use."
+124,A normal laptop should be able to handle several clients for this example.
+125,"Remember to use different partitions for each client, by changing the number in the FEDN_DATA_PATH variable."
+126,5.
+127,"Train the global model
+
+With clients connected, we are now ready to train the global model."
+128,This can be done using either the Studio dashboard or the Python API.
+129,"In FEDn, training is organised in Sessions."
+130,One training session consists of a configurable number of training rounds (local model updates and aggregation).
+131,"In Studio,
+
+    Click on the “Sessions” link, then the “New session” button in the upper right corner."
+132,Click the “Start session” tab and enter your desirable settings (the default settings are good for this example).
+133,Hit the “Start run” button.
+134,In the terminal where your are running your client you should now see some activity.
+135,"When a round is completed, you can see the results on the “Models” page."
+136,"Watch real-time updates of training progress
+
+Once a training session is started, you can monitor the progress by clicking the drop-down button for the active Sessions and then clicking on the “View session” button."
+137,"The session page will show metrics related to the training progress (accuracy, loss etc), as well as performance data such as total round times and individual client training times."
+138,A list of models in the session is updated as soon as new models are generated.
+139,"To get more information about a particular model, navigate to the model page by clicking the model name."
+140,From the model page you can download the model weights and get validation metrics.
+141,"Congratulations, you have now completed your first federated training session with FEDn!"
+142,Below you find additional information that can be useful as you progress in your federated learning journey.
+143,"Downloading global model updates
+
+Note
+
+In FEDn Studio, you can access global model updates by going to the ‘Models’ or ‘Sessions’ tab."
+144,"Here you can download model updates, metrics (as csv) and view the model trail."
+145,Where to go from here?
+146,"With you first FEDn federated project set up, we suggest that you take a closer look at how a FEDn project is structured to learn how to develop your own FEDn projects:
+
+Develop a FEDn project
+
+In this tutorial we relied on the UI for running training sessions and retrieving models and results."
+147,"The Python APIClient provides a flexible alternative, with additional functionality exposed, including the use of different aggregators."
+148,"Learn how to use the APIClient here:
+
+Using the FEDn API Client
+
+Study the architecture overview to learn more about how FEDn is designed and works under the hood:
+
+Architecture overview
+
+For developers looking to customize FEDn and develop own aggregators, check out the local development guide to learn how to set up an all-in-one development environment using Docker and docker-compose:
+
+Developer guide"

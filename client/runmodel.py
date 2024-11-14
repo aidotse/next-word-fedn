@@ -9,6 +9,8 @@ from fedn import APIClient
 import torch.nn as nn
 from transformers import BertTokenizer
 from model import load_model_inference
+import os
+import signal
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 client = APIClient(host="fedn.scaleoutsystems.com/ai-sweden-young-talent-2024-vua-fedn-reducer", token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzMzNDc5NDEwLCJpYXQiOjE3MzA4ODc0MTAsImp0aSI6IjI0YTVjMzE0NjQ2OTQxZWY4YWJiZjJkMjBjYWViNjYxIiwidXNlcl9pZCI6NjEyLCJjcmVhdG9yIjoibWFra2EiLCJyb2xlIjoiYWRtaW4iLCJwcm9qZWN0X3NsdWciOiJhaS1zd2VkZW4teW91bmctdGFsZW50LTIwMjQtdnVhIn0.EajGSiKsQt9gMEPb9b2vnqa0A9zZlkdtou8tRjCiyjo", secure=True, verify=True)
@@ -89,13 +91,13 @@ def predict_next_word(model, sequence, idx_to_word, word_to_idx, seq_length=6):
 
 def load_model():
     global loaded_model
-    model_load_path = 'bert3.npz'
+    model_load_path = 'bert4.npz'
     #client.download_model("e0415099-5474-4910-8494-cb5f995eb9e4", path=model_load_path)
     loaded_model = load_model_inference(model_load_path)
 
 def update_model():
     global loaded_model
-    model_load_path = 'bert.npz'
+    model_load_path = 'cloud.npz'
     current_models = client.get_models()
     print(current_models)
     latest = current_models['result'][0]['model']
@@ -154,13 +156,17 @@ def update_model_endpoint():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/stop', methods=['GET'])
+def stop_server():
+    os.kill(os.getpid(), signal.SIGINT)
+    return jsonify({'success': True, 'message': 'Server shutting down...'})
+
 def run_node_script():
     subprocess.run(['node', 'svelte/build/index.js'])
 
     
 
 if __name__ == '__main__':
-    
     load_model()
     
     node_thread = threading.Thread(target=run_node_script)
