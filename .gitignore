@@ -176,3 +176,4 @@ pip-selfcheck.json
 share
 
 test.pypackage.tgz
+*.tgz

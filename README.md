@@ -5,10 +5,13 @@ By AI Sweden Young Talents: Västerås.
 
 # Navigating this codebase
 
-This codebase contains lots of unused experiments. Especially in the ```./train``` folder. The only files/folders used for the final product is 
-```./train/LSTM/wordOptLSTM.ipynb```
-```./data```
-```./client```
+You can find the training notebook for our final model in ./train
+
+The client code for federated learning is in the ./client
+
+You can find old files and old models in the ./old folder
+
+We also kept the data in git and is located in ./data
 
 ## Intro
 
