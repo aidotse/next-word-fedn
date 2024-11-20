@@ -19,20 +19,19 @@ class NextWordLSTM(nn.Module):
         self.repetition_penalty = repetition_penalty
     
     def forward(self, x, lengths):
-        x = self.embedding(x)  # Shape: (batch_size, max_seq_length, embed_size)
+        x = self.embedding(x)
         packed_input = pack_padded_sequence(x, lengths, batch_first=True, enforce_sorted=False)
         packed_out, (ht, ct) = self.lstm(packed_input)
         lstm_out, _ = pad_packed_sequence(packed_out, batch_first=True)
         lstm_out = lstm_out[torch.arange(lstm_out.size(0)), lengths - 1]
-        out = self.fc(lstm_out)  # Shape: (batch_size, vocab_size)
+        out = self.fc(lstm_out)
 
 
 
-        # Apply repetition penalty
         if self.repetition_penalty != 1.0:
-            for i in range(out.size(0)):  # For each batch element
-                for j in range(lengths[i].item()):  # For each valid token position in sequence
-                    token_id = x[i, j].argmax().item()  # Get token ID as scalar
+            for i in range(out.size(0)):
+                for j in range(lengths[i].item()):
+                    token_id = x[i, j].argmax().item()
                     if token_id != 0:  # Check for padding token
                         out[i, token_id] -= torch.log(torch.tensor(self.repetition_penalty, device=out.device))
 

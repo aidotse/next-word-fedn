@@ -14,7 +14,7 @@ sys.path.append(os.path.abspath(dir_path))
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 
-def train(in_model_path, out_model_path, data_path=None, batch_size=4, epochs=2, lr=0.01):
+def train(in_model_path, out_model_path, data_path=None, batch_size=8, epochs=1, lr=0.01):
     train_loader = load_data(data_path, is_train=True)
     
     model = load_model_train(in_model_path)
