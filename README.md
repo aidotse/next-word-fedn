@@ -5,13 +5,13 @@ By AI Sweden Young Talents: Västerås.
 
 # Navigating this codebase
 
-You can find the training notebook for our final model in ./train
+You can find the training notebook for our final model in [./train](https://github.com/aidotse/next-word-fedn/tree/main/train)
 
-The client code for federated learning is in the ./client
+The client code for federated learning is in the [./client](https://github.com/aidotse/next-word-fedn/tree/main/client)
 
-You can find old files and old models in the ./old folder
+You can find old files and old models in the [./old](https://github.com/aidotse/next-word-fedn/tree/main/old)
 
-We also kept the data in git and is located in ./data
+We also kept the data in git and is located in [./data](https://github.com/aidotse/next-word-fedn/tree/main/data)
 
 ## Intro
 
